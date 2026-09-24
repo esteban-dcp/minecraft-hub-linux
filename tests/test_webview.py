@@ -19,7 +19,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import launch, webview, xodus
+from minecrafthub import launch, webview, xodus
 
 _EXEC_DIR = webview.XODUS_WEBVIEW_EXEC_DIR
 

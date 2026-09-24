@@ -19,7 +19,7 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VER="$(grep -m1 '^VERSION = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
+VER="$(grep -m1 '^VERSION = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
 OUT="$SRC/dist"
 CACHE="${BOL_APPIMAGE_BUILD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/minecraft-hub-build/appimage}"
 mkdir -p "$CACHE" "$OUT"
@@ -37,7 +37,7 @@ export SOURCE_DATE_EPOCH
 # "nightly" prerelease rather than replace itself with the stable release.
 # Setting BOL_APPIMAGE_UPDATE_INFO to the empty string builds an AppImage with
 # no update information at all.
-SELF_REPO="$(grep -m1 '^WINEGDK_PREBUILT_REPO = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
+SELF_REPO="$(grep -m1 '^WINEGDK_PREBUILT_REPO = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
 [[ "$SELF_REPO" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ ]] || {
   echo "!! could not read the release repository from bol/config.py" >&2
   exit 1

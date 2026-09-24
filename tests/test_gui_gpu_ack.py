@@ -12,8 +12,8 @@ written, and these tests pin that the confirmation is never skipped.
 import unittest
 from unittest import mock
 
-from bol import gui
-from bol.gpu_safety import GpuSafetyAcknowledgementStatus
+from minecrafthub import gui
+from minecrafthub.gpu_safety import GpuSafetyAcknowledgementStatus
 
 
 def _status(previous_boot_fault=False, message="an interrupted launch"):

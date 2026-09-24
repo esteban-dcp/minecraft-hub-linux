@@ -14,7 +14,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from bol import fixups
+from minecrafthub import fixups
 
 # The shape shipped by 1.26.44: module alias `r.`, component factory `n.`,
 # notice component `nD`, state hook `T3`, warning component `I3`.

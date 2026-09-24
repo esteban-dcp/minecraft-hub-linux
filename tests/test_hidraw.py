@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import hidraw
+from minecrafthub import hidraw
 from tests.test_wine_registry import SYSTEM, USER
 
 

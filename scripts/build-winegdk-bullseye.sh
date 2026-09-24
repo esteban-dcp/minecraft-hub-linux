@@ -444,13 +444,13 @@ done
 
 CONFIG_COMMIT="$(
   awk -F'"' '/^WINEGDK_SOURCE_COMMIT = "/ { print $2; exit }' \
-    "$PROJECT_ROOT/bol/config.py"
+    "$PROJECT_ROOT/minecrafthub/config.py"
 )"; readonly CONFIG_COMMIT
 [[ "$CONFIG_COMMIT" == "$EXPECTED_COMMIT" ]] ||
   die "bol/config.py pins '$CONFIG_COMMIT', expected '$EXPECTED_COMMIT'"
 CONFIG_SOURCE_MANIFEST_SHA256="$(
   awk -F'"' '/^WINEGDK_SOURCE_MANIFEST_SHA256 = "/ { print $2; exit }' \
-    "$PROJECT_ROOT/bol/config.py"
+    "$PROJECT_ROOT/minecrafthub/config.py"
 )"
 readonly CONFIG_SOURCE_MANIFEST_SHA256
 [[ "$CONFIG_SOURCE_MANIFEST_SHA256" == "$SOURCE_SHA256SUMS_SHA256" ]] ||

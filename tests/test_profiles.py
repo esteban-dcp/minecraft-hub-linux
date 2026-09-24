@@ -12,8 +12,8 @@ from unittest import mock
 
 import pytest
 
-from bol.log import BolError
-from bol.profiles import (
+from minecrafthub.log import BolError
+from minecrafthub.profiles import (
     create_profile,
     current_profile_info,
     current_profile_name,
@@ -159,7 +159,7 @@ def test_profile_commands_from_managed_profile_use_sibling_root(tmp_path):
     base = tmp_path / "data"
     alice = create_profile("Alice", base)
 
-    with mock.patch("bol.profiles.DATA", alice):
+    with mock.patch("minecrafthub.profiles.DATA", alice):
         bob = create_profile("Bob")
         items = list_profiles()
 
@@ -171,7 +171,7 @@ def test_profile_commands_from_managed_profile_use_sibling_root(tmp_path):
 def test_bol_home_data_root_remains_profile_base(tmp_path):
     data_root = tmp_path / "direct BOL_HOME"
 
-    with mock.patch("bol.profiles.DATA", data_root):
+    with mock.patch("minecrafthub.profiles.DATA", data_root):
         profile = create_profile("Alice")
         items = list_profiles()
 
@@ -183,7 +183,7 @@ def test_explicit_profile_base_overrides_managed_profile_data(tmp_path):
     current = create_profile("Current", tmp_path / "current")
     explicit = tmp_path / "explicit"
 
-    with mock.patch("bol.profiles.DATA", current):
+    with mock.patch("minecrafthub.profiles.DATA", current):
         profile = create_profile("Other", explicit)
 
     assert profile == explicit / "profiles" / "other"
@@ -225,7 +225,7 @@ def test_shortcut_created_inside_appimage_uses_persistent_appimage(tmp_path):
 
     with mock.patch.dict(
             os.environ, {"APPIMAGE": str(appimage)}, clear=True), \
-            mock.patch("bol.profiles.shutil.which",
+            mock.patch("minecrafthub.profiles.shutil.which",
                        return_value=str(mounted_launcher)):
         assert launcher_executable() == str(appimage.resolve())
 
@@ -243,7 +243,7 @@ def test_fresh_profile_can_run_real_mkdirs_without_dangling_links(tmp_path):
         [
             sys.executable,
             "-c",
-            "from bol.util import mkdirs; mkdirs()",
+            "from minecrafthub.util import mkdirs; mkdirs()",
         ],
         cwd=ROOT,
         env=env,
@@ -429,7 +429,7 @@ def test_delete_profile_reserved_default_rejected(tmp_path):
 def test_delete_profile_blocked_when_active_processes(tmp_path):
     base = tmp_path / "data"
     profile = create_profile("Active Player", base)
-    with mock.patch("bol.profiles.profile_processes", return_value=[12345]):
+    with mock.patch("minecrafthub.profiles.profile_processes", return_value=[12345]):
         with pytest.raises(BolError) as err:
             delete_profile("Active Player", base)
         assert "launcher window(s) are currently open" in str(err.value)
@@ -439,7 +439,7 @@ def test_delete_profile_blocked_when_active_processes(tmp_path):
 def test_rename_profile_blocked_when_active_processes(tmp_path):
     base = tmp_path / "data"
     profile = create_profile("Active Player", base)
-    with mock.patch("bol.profiles.profile_processes", return_value=[12345]):
+    with mock.patch("minecrafthub.profiles.profile_processes", return_value=[12345]):
         with pytest.raises(BolError) as err:
             rename_profile("Active Player", "New Player", base)
         assert "launcher window(s) are currently open" in str(err.value)
@@ -448,7 +448,7 @@ def test_rename_profile_blocked_when_active_processes(tmp_path):
 
 
 def test_current_profile_info_on_default_data(tmp_path):
-    with mock.patch("bol.profiles.DATA", tmp_path / "default_data"):
+    with mock.patch("minecrafthub.profiles.DATA", tmp_path / "default_data"):
         info = current_profile_info()
         assert info["name"] == "Default"
         assert info["slug"] == "default"
@@ -459,7 +459,7 @@ def test_current_profile_info_on_default_data(tmp_path):
 def test_current_profile_info_in_managed_profile(tmp_path):
     base = tmp_path / "data"
     alice = create_profile("Alice", base)
-    with mock.patch("bol.profiles.DATA", alice):
+    with mock.patch("minecrafthub.profiles.DATA", alice):
         info = current_profile_info()
         assert info["name"] == "Alice"
         assert info["slug"] == "alice"
@@ -471,7 +471,7 @@ def test_relaunch_with_profile_sets_bol_home_and_execs(tmp_path):
     profile = tmp_path / "custom_profile"
     with mock.patch.dict(os.environ, {}, clear=True):
         with mock.patch("os.execv") as mock_execv, \
-             mock.patch("bol.profiles.launcher_executable", return_value="/bin/bol"):
+             mock.patch("minecrafthub.profiles.launcher_executable", return_value="/bin/bol"):
             relaunch_with_profile(profile)
             mock_execv.assert_called_once()
             args = mock_execv.call_args[0]
@@ -482,7 +482,7 @@ def test_relaunch_with_profile_sets_bol_home_and_execs(tmp_path):
     custom_root = tmp_path / "sandbox"
     with mock.patch.dict(os.environ, {}, clear=True):
         with mock.patch("os.execv") as mock_execv, \
-             mock.patch("bol.profiles.launcher_executable", return_value="/bin/bol"):
+             mock.patch("minecrafthub.profiles.launcher_executable", return_value="/bin/bol"):
             relaunch_with_profile(None, base_data=custom_root)
             mock_execv.assert_called_once()
             assert os.environ["BOL_HOME"] == str(custom_root.resolve())
@@ -491,7 +491,7 @@ def test_relaunch_with_profile_sets_bol_home_and_execs(tmp_path):
 def test_open_profile_window_spawns_process(tmp_path):
     profile = tmp_path / "custom_profile"
     with mock.patch("subprocess.Popen") as mock_popen, \
-         mock.patch("bol.profiles.launcher_executable", return_value="/bin/bol"):
+         mock.patch("minecrafthub.profiles.launcher_executable", return_value="/bin/bol"):
         open_profile_window(profile)
         mock_popen.assert_called_once()
         args, kwargs = mock_popen.call_args
@@ -506,7 +506,7 @@ def test_open_profile_window_spawns_process(tmp_path):
 def test_open_profile_window_with_default_profile(tmp_path):
     custom_root = tmp_path / "sandbox"
     with mock.patch("subprocess.Popen") as mock_popen, \
-         mock.patch("bol.profiles.launcher_executable", return_value="/bin/bol"):
+         mock.patch("minecrafthub.profiles.launcher_executable", return_value="/bin/bol"):
         open_profile_window(None, base_data=custom_root)
         mock_popen.assert_called_once()
         args, kwargs = mock_popen.call_args

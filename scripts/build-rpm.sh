@@ -6,7 +6,7 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VER="$(grep -m1 '^VERSION = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
+VER="$(grep -m1 '^VERSION = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
 OUT="$SRC/dist"
 # rpmbuild empties %{buildroot} itself before %install, so the payload is
 # staged beside it and copied in by the spec rather than pre-installed there.

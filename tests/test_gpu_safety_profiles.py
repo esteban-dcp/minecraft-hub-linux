@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from bol.profiles import create_profile
+from minecrafthub.profiles import create_profile
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,7 +36,7 @@ def test_profile_b_observes_profile_a_interrupted_gpu_launch(tmp_path):
 
     armed = _run_in_profile(profile_a, """
 import json
-from bol import gpu_safety
+from minecrafthub import gpu_safety
 gpu_safety._boot_id = lambda: "boot-a"
 gpu_safety.arm_gpu_launch()
 print(json.dumps({
@@ -54,8 +54,8 @@ print(json.dumps({
 
     observed = _run_in_profile(profile_b, """
 import json
-from bol import gpu_safety
-from bol.log import BolError
+from minecrafthub import gpu_safety
+from minecrafthub.log import BolError
 gpu_safety._boot_id = lambda: "boot-b"
 problem = gpu_safety.interrupted_launch_problem()
 try:
@@ -82,14 +82,14 @@ def test_profile_b_acknowledgement_is_visible_from_profile_a(tmp_path):
     profile_b = create_profile("Player B", base)
 
     _run_in_profile(profile_a, """
-from bol import gpu_safety
+from minecrafthub import gpu_safety
 gpu_safety._boot_id = lambda: "boot-before-reboot"
 gpu_safety.arm_gpu_launch()
 """)
     acknowledged = _run_in_profile(profile_b, """
 import json
 from types import SimpleNamespace
-from bol import gpu_safety
+from minecrafthub import gpu_safety
 gpu_safety._boot_id = lambda: "boot-now"
 clean_journal = lambda *_args, **_kwargs: SimpleNamespace(
     stdout="", stderr="", returncode=0)
@@ -111,7 +111,7 @@ print(json.dumps({
 
     visible = _run_in_profile(profile_a, """
 import json
-from bol import gpu_safety
+from minecrafthub import gpu_safety
 print(gpu_safety.GPU_SAFETY_ACK.read_text(encoding="utf-8"))
 """)
     payload = json.loads(visible.stdout)

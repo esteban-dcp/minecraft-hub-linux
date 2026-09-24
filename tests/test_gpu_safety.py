@@ -11,7 +11,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from bol import gpu_safety
+from minecrafthub import gpu_safety
 
 
 def result(stdout="", stderr="", returncode=0):

@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import auth
+from minecrafthub import auth
 
 
 _UPGRADED_SYSTEM_REG = b"""WINE REGISTRY Version 2
@@ -46,7 +46,7 @@ class WineGdkPrerequisiteTests(unittest.TestCase):
                     mock.patch.object(auth, "load_settings",
                                       return_value={}), \
                     mock.patch.object(auth, "ok"), \
-                    mock.patch("bol.prefix.require_prefix_idle"):
+                    mock.patch("minecrafthub.prefix.require_prefix_idle"):
                 auth.wine_apply_winegdk_prereqs()
                 system_once = (prefix / "system.reg").read_bytes()
                 user_once = (prefix / "user.reg").read_bytes()
@@ -447,7 +447,7 @@ class OnlinePreauthPayloadTests(unittest.TestCase):
                     mock.patch.object(auth, "active_prefix",
                                       return_value=prefix), \
                     mock.patch.object(auth, "prefix_operation_lock"), \
-                    mock.patch("bol.prefix.require_prefix_idle"):
+                    mock.patch("minecrafthub.prefix.require_prefix_idle"):
                 self.assertTrue(auth.msa_logout())
 
             self.assertFalse((msa / "token.json").exists())

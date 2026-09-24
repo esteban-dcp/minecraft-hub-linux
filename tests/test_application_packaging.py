@@ -7,7 +7,7 @@ import re
 import unittest
 from pathlib import Path
 
-from bol import deps
+from minecrafthub import deps
 
 
 ROOT = Path(__file__).resolve().parents[1]

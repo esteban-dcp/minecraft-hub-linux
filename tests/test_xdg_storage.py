@@ -10,8 +10,8 @@ from unittest import mock
 
 import pytest
 
-from bol import xdg_migration
-from bol.xdg_migration import migrate_legacy_flatpak_data
+from minecrafthub import xdg_migration
+from minecrafthub.xdg_migration import migrate_legacy_flatpak_data
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,7 +28,7 @@ def _config_snapshot(tmp_path, extra_env=None):
     env.pop("BOL_HOME", None)
     env.update(extra_env or {})
     code = (
-        "import json; from bol import config; "
+        "import json; from minecrafthub import config; "
         "print(json.dumps({'data': str(config.DATA), "
         "'default': config.default_install_location(), "
         "'legacy': str(config.LEGACY_DATA), "
@@ -460,7 +460,7 @@ def test_relocated_install_location_is_not_migrated_into(tmp_path):
     try:
         result = subprocess.run(
             [sys.executable, "-c",
-             "from bol.util import _ensure_xdg_storage; "
+             "from minecrafthub.util import _ensure_xdg_storage; "
              "_ensure_xdg_storage(); print('ready')"],
             cwd=ROOT, env=env, text=True, capture_output=True,
         )
@@ -498,7 +498,7 @@ def test_cli_migrates_before_first_flatpak_profile_command(tmp_path):
             (
                 "import sys; "
                 "sys.argv=['bedrock-on-linux','profiles','create','Alice']; "
-                "from bol.cli import main; main()"
+                "from minecrafthub.cli import main; main()"
             ),
         ],
         cwd=ROOT,

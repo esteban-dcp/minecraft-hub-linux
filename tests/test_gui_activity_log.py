@@ -11,7 +11,7 @@ instead of applied.
 import unittest
 from unittest import mock
 
-from bol.log import _LEVELS
+from minecrafthub.log import _LEVELS
 from tests.guiharness import headless_window, qt_app
 
 

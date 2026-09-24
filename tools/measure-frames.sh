@@ -38,7 +38,7 @@ fi
 # The engine the launcher is configured to use, so the sampler can tell this
 # run's wineserver apart from one left behind by an earlier session.
 engine_root="$(cd "$PROJECT_ROOT" && python3 -c 'import sys; sys.path.insert(0, ".")
-from bol.util import load_settings
+from minecrafthub.util import load_settings
 print(load_settings().get("proton") or "")' 2>/dev/null || true)"
 
 # State the synchronization verdict up front. Comparing a run whose engine
@@ -46,8 +46,8 @@ print(load_settings().get("proton") or "")' 2>/dev/null || true)"
 # silently reverted engine setting makes the two runs indistinguishable
 # afterwards -- so record it in the report directory too.
 fast_sync="$(cd "$PROJECT_ROOT" && python3 -c 'import sys; sys.path.insert(0, ".")
-from bol.ntsync import inproc_sync_summary
-from bol.util import load_settings
+from minecrafthub.ntsync import inproc_sync_summary
+from minecrafthub.util import load_settings
 print(inproc_sync_summary(load_settings().get("proton"), environ={}))' 2>/dev/null || echo "unknown")"
 
 echo "== Report directory: $OUT"

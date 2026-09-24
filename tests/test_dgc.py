@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import dgc, launch
+from minecrafthub import dgc, launch
 
 
 def _make_card(root, name, vendor, dev_id, driver):

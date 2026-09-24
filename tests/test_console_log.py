@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bol import log
+from minecrafthub import log
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -36,7 +36,7 @@ class DeadConsoleTests(unittest.TestCase):
             record = Path(tmp) / "child-status"
             status = self._run_on_dead_pipe(
                 "import subprocess, sys\n"
-                "from bol import log\n"
+                "from minecrafthub import log\n"
                 "log.info('first line')\n"
                 "log.warn('second line')\n"
                 "child = subprocess.run(['sh', '-c', "

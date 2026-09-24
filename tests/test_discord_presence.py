@@ -17,7 +17,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import discord
+from minecrafthub import discord
 
 _HANDSHAKE = 0
 _FRAME = 1
@@ -258,7 +258,7 @@ class ArtworkTests(unittest.TestCase):
         self.assertTrue(large.startswith("https://"), large)
 
     def test_the_default_image_is_one_this_project_publishes(self):
-        from bol.config import SITE_URL
+        from minecrafthub.config import SITE_URL
         self.assertTrue(
             discord.session_activity({})["assets"]["large_image"]
             .startswith(SITE_URL))
@@ -269,7 +269,7 @@ class ArtworkTests(unittest.TestCase):
         self.assertEqual(assets["small_image"], "linux")
 
     def test_the_large_image_is_labelled_with_the_app_name(self):
-        from bol.config import PRETTY
+        from minecrafthub.config import PRETTY
         self.assertEqual(self._assets("logo", "")["large_text"], PRETTY)
 
     def test_an_unset_small_image_is_left_out_entirely(self):

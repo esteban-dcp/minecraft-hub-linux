@@ -15,7 +15,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bol import raytracing
+from minecrafthub import raytracing
 
 
 # One device creation as the shipped payload logs it, trimmed to the lines
@@ -157,7 +157,7 @@ class LaunchAsksForTheVerdictTest(unittest.TestCase):
     """Without info-level graphics logging there is nothing to read back."""
 
     def test_every_launch_records_the_graphics_capabilities(self):
-        from bol import launch
+        from minecrafthub import launch
 
         for diagnostics in (False, True):
             env = {}

@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest import mock
 
-from bol import x11
+from minecrafthub import x11
 
 
 def result(stdout="", returncode=0):

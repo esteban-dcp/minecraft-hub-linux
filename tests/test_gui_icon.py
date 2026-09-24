@@ -12,7 +12,7 @@ whole point is looking like a normal desktop app.
 import unittest
 from pathlib import Path
 
-from bol.gui import icon_candidates
+from minecrafthub.gui import icon_candidates
 
 
 class IconCandidateTests(unittest.TestCase):

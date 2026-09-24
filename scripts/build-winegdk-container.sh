@@ -18,10 +18,10 @@ PREFIX="${2:?usage: build-winegdk-container.sh WINEGDK_SOURCE_REPO OUT_PREFIX}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
 EXPECTED_COMMIT="$(grep -m1 '^WINEGDK_SOURCE_COMMIT = ' \
-  "$PROJECT_ROOT/bol/config.py" | cut -d'"' -f2)"
+  "$PROJECT_ROOT/minecrafthub/config.py" | cut -d'"' -f2)"
 EXPECTED_SOURCE_MANIFEST_SHA256="$(
   grep -m1 '^WINEGDK_SOURCE_MANIFEST_SHA256 = ' \
-    "$PROJECT_ROOT/bol/config.py" | cut -d'"' -f2
+    "$PROJECT_ROOT/minecrafthub/config.py" | cut -d'"' -f2
 )"
 readonly EXPECTED_SOURCE_DATE_EPOCH="1784308597"
 readonly GLIBC_CEILING="2.31"

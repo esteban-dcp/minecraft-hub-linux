@@ -6,7 +6,7 @@ import sys
 import unittest
 from unittest import mock
 
-from bol import cli, doctor
+from minecrafthub import cli, doctor
 
 
 class DoctorGpuSafetyTests(unittest.TestCase):
@@ -17,11 +17,11 @@ class DoctorGpuSafetyTests(unittest.TestCase):
             "Previous incident.",
             marker_present=True,
         )
-        with mock.patch("bol.prefix.launch_lock",
+        with mock.patch("minecrafthub.prefix.launch_lock",
                         return_value=contextlib.nullcontext()) as lock, \
-                mock.patch("bol.prefix.active_prefix",
+                mock.patch("minecrafthub.prefix.active_prefix",
                            return_value="/tmp/prefix"), \
-                mock.patch("bol.prefix.prefix_processes", return_value=[]), \
+                mock.patch("minecrafthub.prefix.prefix_processes", return_value=[]), \
                 mock.patch.object(doctor, "acknowledge_gpu_safety_incident",
                                   return_value=status) as acknowledge, \
                 mock.patch.object(doctor, "warn") as warning:
@@ -32,11 +32,11 @@ class DoctorGpuSafetyTests(unittest.TestCase):
                       warning.call_args.args[0])
 
     def test_acknowledgement_refuses_live_wine_or_umu_processes(self):
-        with mock.patch("bol.prefix.launch_lock",
+        with mock.patch("minecrafthub.prefix.launch_lock",
                         return_value=contextlib.nullcontext()), \
-                mock.patch("bol.prefix.active_prefix",
+                mock.patch("minecrafthub.prefix.active_prefix",
                            return_value="/tmp/prefix"), \
-                mock.patch("bol.prefix.prefix_processes",
+                mock.patch("minecrafthub.prefix.prefix_processes",
                            return_value=[12, 34]), \
                 mock.patch.object(doctor, "acknowledge_gpu_safety_incident") \
                 as acknowledge, \
@@ -46,7 +46,7 @@ class DoctorGpuSafetyTests(unittest.TestCase):
 
     def test_acknowledgement_reports_launch_lock_race_cleanly(self):
         with mock.patch(
-                "bol.prefix.launch_lock",
+                "minecrafthub.prefix.launch_lock",
                 side_effect=doctor.BolError(
                     "another BedrockOnLinux session is already in progress"
                 )), \
@@ -69,9 +69,9 @@ class DoctorGpuSafetyTests(unittest.TestCase):
             "Previous incident.",
             previous_boot_fault=True,
         )
-        with mock.patch("bol.prefix.active_prefix",
+        with mock.patch("minecrafthub.prefix.active_prefix",
                         return_value="/tmp/prefix"), \
-                mock.patch("bol.prefix.prefix_processes", return_value=[]), \
+                mock.patch("minecrafthub.prefix.prefix_processes", return_value=[]), \
                 mock.patch.object(
                     doctor, "gpu_safety_acknowledgement_status",
                     return_value=expected) as gpu_status:
@@ -80,9 +80,9 @@ class DoctorGpuSafetyTests(unittest.TestCase):
         gpu_status.assert_called_once_with()
 
     def test_status_helper_refuses_live_prefix_without_offering_prompt(self):
-        with mock.patch("bol.prefix.active_prefix",
+        with mock.patch("minecrafthub.prefix.active_prefix",
                         return_value="/tmp/prefix"), \
-                mock.patch("bol.prefix.prefix_processes",
+                mock.patch("minecrafthub.prefix.prefix_processes",
                            return_value=[12, 34]), \
                 mock.patch.object(
                     doctor, "gpu_safety_acknowledgement_status") as gpu_status:
@@ -93,11 +93,11 @@ class DoctorGpuSafetyTests(unittest.TestCase):
         gpu_status.assert_not_called()
 
     def test_acknowledgement_refuses_when_no_old_incident_exists(self):
-        with mock.patch("bol.prefix.launch_lock",
+        with mock.patch("minecrafthub.prefix.launch_lock",
                         return_value=contextlib.nullcontext()), \
-                mock.patch("bol.prefix.active_prefix",
+                mock.patch("minecrafthub.prefix.active_prefix",
                            return_value="/tmp/prefix"), \
-                mock.patch("bol.prefix.prefix_processes", return_value=[]), \
+                mock.patch("minecrafthub.prefix.prefix_processes", return_value=[]), \
                 mock.patch.object(
                     doctor, "acknowledge_gpu_safety_incident",
                     side_effect=doctor.BolError(
@@ -109,11 +109,11 @@ class DoctorGpuSafetyTests(unittest.TestCase):
                       warning.call_args.args[0])
 
     def test_acknowledgement_refuses_current_boot_fault(self):
-        with mock.patch("bol.prefix.launch_lock",
+        with mock.patch("minecrafthub.prefix.launch_lock",
                         return_value=contextlib.nullcontext()), \
-                mock.patch("bol.prefix.active_prefix",
+                mock.patch("minecrafthub.prefix.active_prefix",
                            return_value="/tmp/prefix"), \
-                mock.patch("bol.prefix.prefix_processes", return_value=[]), \
+                mock.patch("minecrafthub.prefix.prefix_processes", return_value=[]), \
                 mock.patch.object(
                     doctor, "acknowledge_gpu_safety_incident",
                     side_effect=doctor.BolError(

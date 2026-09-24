@@ -5,7 +5,7 @@ import json
 import os
 import zipfile
 
-from bol import content
+from minecrafthub import content
 
 _USERS_RELATIVE = (
     "drive_c/users/steamuser/AppData/Roaming/Minecraft Bedrock/Users"

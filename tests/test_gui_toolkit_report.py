@@ -4,7 +4,7 @@
 import unittest
 from unittest import mock
 
-from bol import deps, doctor
+from minecrafthub import deps, doctor
 
 LOADER_ERROR = ("libzstd.so.1: cannot open shared object file: "
                 "No such file or directory")

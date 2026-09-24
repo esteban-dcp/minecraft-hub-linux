@@ -10,9 +10,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import cli, deps
-from bol.log import BolError
-from bol.network import NetworkCheck
+from minecrafthub import cli, deps
+from minecrafthub.log import BolError
+from minecrafthub.network import NetworkCheck
 
 
 class CliTests(unittest.TestCase):
@@ -301,9 +301,9 @@ class LauncherStartTests(unittest.TestCase):
         with mock.patch.object(sys, "argv", argv), \
                 mock.patch.dict(os.environ, {"DISPLAY": ":0"}), \
                 mock.patch.object(cli, "launch") as launched, \
-                mock.patch("bol.gui.gui") as window, \
+                mock.patch("minecrafthub.gui.gui") as window, \
                 mock.patch.object(cli, "info"), \
-                mock.patch("bol.gpu_safety.in_gamescope_session",
+                mock.patch("minecrafthub.gpu_safety.in_gamescope_session",
                            return_value=gamescope):
             cli.main()
         return launched, window
@@ -343,7 +343,7 @@ class LauncherStartTests(unittest.TestCase):
         with mock.patch.object(sys, "argv", ["bedrock-on-linux", "gui"]), \
                 mock.patch.dict(os.environ, {"DISPLAY": ":0"}), \
                 mock.patch.object(cli, "IS_TTY", False), \
-                mock.patch("bol.gui.gui",
+                mock.patch("minecrafthub.gui.gui",
                            side_effect=BolError("Qt is missing")), \
                 mock.patch.object(cli, "desktop_notify") as notified, \
                 mock.patch.object(cli, "err"), \
@@ -362,7 +362,7 @@ class LauncherStartTests(unittest.TestCase):
                 mock.patch.object(deps, "have", return_value=False), \
                 mock.patch.object(deps, "ensure_gui_deps",
                                   return_value=[]) as bootstrap, \
-                mock.patch("bol.gui.gui") as window:
+                mock.patch("minecrafthub.gui.gui") as window:
             cli.main()
 
         bootstrap.assert_called_once_with()
@@ -374,7 +374,7 @@ class LauncherStartTests(unittest.TestCase):
                 mock.patch.dict(os.environ, {"DISPLAY": ":0"}), \
                 mock.patch.object(deps, "have", return_value=True), \
                 mock.patch.object(deps, "ensure_gui_deps") as bootstrap, \
-                mock.patch("bol.gui.gui") as window:
+                mock.patch("minecrafthub.gui.gui") as window:
             cli.main()
 
         bootstrap.assert_not_called()
@@ -403,7 +403,7 @@ class LauncherStartTests(unittest.TestCase):
         real_import = builtins.__import__
 
         def without_qt(name, globals=None, locals=None, fromlist=(), level=0):
-            if name == "gui" or name.endswith("bol.gui"):
+            if name == "gui" or name.endswith("minecrafthub.gui"):
                 raise refused
             return real_import(name, globals, locals, fromlist, level)
 
@@ -427,7 +427,7 @@ class LauncherStartTests(unittest.TestCase):
         real_import = builtins.__import__
 
         def broken_gui(name, globals=None, locals=None, fromlist=(), level=0):
-            if name == "gui" or name.endswith("bol.gui"):
+            if name == "gui" or name.endswith("minecrafthub.gui"):
                 raise ImportError("cannot import name 'QToolButton'")
             return real_import(name, globals, locals, fromlist, level)
 

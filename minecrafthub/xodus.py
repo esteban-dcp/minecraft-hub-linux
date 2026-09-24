@@ -593,7 +593,7 @@ def _record_login_output(lines, outcome):
 def login(on_line=None):
     """Run the interactive Xodus sign-in.
 
-    This is a *separate* account link from bol.auth's device-code flow, which
+    This is a *separate* account link from minecrafthub.auth's device-code flow, which
     stays as-is for the in-game sign-in: Xodus needs a device-bound legacy RPS
     token to talk to the licensing service, which a device-code OAuth token
     cannot stand in for. Opens Xodus's own webview window, so it needs a
@@ -1545,7 +1545,7 @@ except OSError as exc:
 # still beats one that does not start at all.
 try:
     sys.path.insert(0, LAUNCHER_PATH)
-    from bol.fixups import _raise_stack_reserve
+    from minecrafthub.fixups import _raise_stack_reserve
 
     if nt_name in staged:
         with open(staged[nt_name], "r+b") as image:

@@ -13,8 +13,8 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VER="$(grep -m1 '^VERSION = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
-REV="$(grep -m1 '^WINEGDK_BUILD_REV = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
+VER="$(grep -m1 '^VERSION = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
+REV="$(grep -m1 '^WINEGDK_BUILD_REV = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
 APPID="io.github.esteban-dcp.MinecraftHub"
 MANIFEST="$SRC/flatpak/$APPID.yml"
 DEV_MANIFEST="$SRC/flatpak/.$APPID.resolved.yml"   # same dir → ../ paths resolve
@@ -29,7 +29,7 @@ WORK="$OUT/flatpak-build"
 BUNDLE="$OUT/MinecraftHub-${VER}-x86_64.flatpak"
 
 [[ -n "$VER" && -n "$REV" ]] || {
-  echo "could not read VERSION/WINEGDK_BUILD_REV from bol/config.py" >&2
+  echo "could not read VERSION/WINEGDK_BUILD_REV from minecrafthub/config.py" >&2
   exit 1
 }
 
@@ -107,7 +107,7 @@ keep_metainfo = appstream == "yes"
 with open(src, encoding="utf-8") as source:
     manifest = yaml.safe_load(source)
 
-config_path = checkout / "bol/config.py"
+config_path = checkout / "minecrafthub/config.py"
 tree = ast.parse(config_path.read_text(encoding="utf-8"), filename=str(config_path))
 metadata = {}
 for node in tree.body:
@@ -121,12 +121,12 @@ for node in tree.body:
             metadata[target.id] = value
 missing = {"VERSION", "WINEGDK_BUILD_REV"} - metadata.keys()
 if missing:
-    raise SystemExit("bol/config.py lacks literal " + ", ".join(sorted(missing)))
+    raise SystemExit("minecrafthub/config.py lacks literal " + ", ".join(sorted(missing)))
 
 required = [
     checkout / "minecraft-hub",
     checkout / "LICENSE",
-    checkout / "bol",
+    checkout / "minecrafthub",
     checkout / "data/icon.png",
     checkout / "flatpak/io.github.esteban-dcp.MinecraftHub.desktop",
 ]
@@ -146,7 +146,7 @@ if app.get("name") != "minecraft-hub":
 app["sources"] = [
     {"type": "file", "path": "../minecraft-hub"},
     {"type": "file", "path": "../LICENSE"},
-    {"type": "dir", "path": "../bol", "dest": "bol"},
+    {"type": "dir", "path": "../minecrafthub", "dest": "minecrafthub"},
     {"type": "file", "path": "../data/icon.png", "dest": "data"},
     {"type": "file", "path": "io.github.esteban-dcp.MinecraftHub.desktop",
      "dest": "flatpak"},
@@ -211,8 +211,8 @@ rm -f -- "$BUNDLE"
 # Inspect the installed tree in flatpak-builder's sandbox, not merely the host
 # source or output filename.  Bind the complete regular-file payload to the
 # checkout after the build has finished: VERSION/revision equality alone cannot
-# detect a cached bol/ tree which omitted a newly added safety module.
-EXPECTED_BOL_HASHES="$(python3 - "$SRC/bol" <<'PY'
+# detect a cached minecrafthub/ tree which omitted a newly added safety module.
+EXPECTED_BOL_HASHES="$(python3 - "$SRC/minecrafthub" <<'PY'
 import hashlib
 import json
 import stat
@@ -232,7 +232,7 @@ print(json.dumps(files, sort_keys=True, separators=(",", ":")))
 PY
 )"
 [[ -n "$EXPECTED_BOL_HASHES" ]] || {
-  echo "could not hash the checkout bol/ payload" >&2
+  echo "could not hash the checkout minecrafthub/ payload" >&2
   exit 1
 }
 
@@ -248,16 +248,16 @@ root = Path(sys.argv[1])
 try:
     expected_files = json.loads(sys.argv[2])
 except (TypeError, ValueError) as exc:
-    raise SystemExit(f"invalid expected bol/ payload manifest: {exc}")
+    raise SystemExit(f"invalid expected minecrafthub/ payload manifest: {exc}")
 if not isinstance(expected_files, dict) or not expected_files:
-    raise SystemExit("expected bol/ payload manifest is empty or invalid")
+    raise SystemExit("expected minecrafthub/ payload manifest is empty or invalid")
 
 actual_files = {}
 for candidate in sorted(root.rglob("*")):
     relative = candidate.relative_to(root)
     if "__pycache__" in relative.parts or candidate.suffix == ".pyc":
         raise SystemExit(
-            f"Flatpak bol/ payload contains build-host bytecode: {relative}")
+            f"Flatpak minecrafthub/ payload contains build-host bytecode: {relative}")
     try:
         mode = candidate.lstat().st_mode
     except OSError as exc:
@@ -280,7 +280,7 @@ if missing or stale or extra:
                          ("extra", extra)):
         if names:
             details.append(f"{label}: " + ", ".join(names))
-    raise SystemExit("Flatpak bol/ payload differs from checkout; "
+    raise SystemExit("Flatpak minecrafthub/ payload differs from checkout; "
                      + "; ".join(details))
 
 path = root / "config.py"
@@ -299,7 +299,7 @@ expected = {"VERSION": sys.argv[3], "WINEGDK_BUILD_REV": sys.argv[4]}
 if values != expected:
     raise SystemExit(f"Flatpak payload metadata mismatch: {values!r} != {expected!r}")
 print("Flatpak payload verified byte-for-byte:", values["VERSION"],
-      values["WINEGDK_BUILD_REV"], f"({len(actual_files)} bol/ files)")
+      values["WINEGDK_BUILD_REV"], f"({len(actual_files)} minecrafthub/ files)")
 PY
 )"
 # Run the finished tree with the host Flatpak command.  The

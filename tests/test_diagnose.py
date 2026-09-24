@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import gamesetup
+from minecrafthub import gamesetup
 
 
 class FreezeDiagnosisTests(unittest.TestCase):

@@ -13,7 +13,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from bol.config import (
+from minecrafthub.config import (
     OPENSSL_XCURL_ARCHIVE_SHA256,
     OPENSSL_XCURL_REV,
     UMU_ARCHIVE_SHA256,
@@ -68,7 +68,7 @@ def _config(
 
 def _bol_regular_files():
     """Yield the exact source payload accepted by the candidate verifier."""
-    for path in sorted((ROOT / "bol").rglob("*")):
+    for path in sorted((ROOT / "minecrafthub").rglob("*")):
         relative = path.relative_to(ROOT)
         if "__pycache__" in relative.parts or path.suffix == ".pyc":
             continue
@@ -85,7 +85,7 @@ def _payload_bytes(source, relative):
     packaging mechanics from being exercised at all.
     """
     data = source.read_bytes()
-    if relative == "bol/config.py" and not WINEGDK_ARCHIVE_SHA256:
+    if relative == "minecrafthub/config.py" and not WINEGDK_ARCHIVE_SHA256:
         data = data.replace(
             b'WINEGDK_ARCHIVE_SHA256 = ""',
             b'WINEGDK_ARCHIVE_SHA256 = "%s"' % _PLACEHOLDER_ENGINE_SHA.encode(),
@@ -94,8 +94,8 @@ def _payload_bytes(source, relative):
 
 
 def _copy_bol_payload(destination):
-    for source, relative in _bol_regular_files():
-        output = destination / Path(relative).relative_to("bol")
+    for source, relative in _bol_regular_files():  # noqa: E501
+        output = destination / Path(relative).relative_to("minecrafthub")
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_bytes(_payload_bytes(source, relative))
         shutil.copystat(source, output)
@@ -121,7 +121,7 @@ class CandidateMetadataTests(unittest.TestCase):
         staged = self.base / "checkout"
         if staged.exists():
             return staged
-        _copy_bol_payload(staged / "bol")
+        _copy_bol_payload(staged / "minecrafthub")
         (staged / "scripts").mkdir(parents=True)
         shutil.copy2(VERIFY, staged / "scripts" / VERIFY.name)
         (staged / "data").mkdir(parents=True)
@@ -158,7 +158,7 @@ class CandidateMetadataTests(unittest.TestCase):
             for source, relative in _bol_regular_files():
                 if relative in missing:
                     continue
-                if relative == "bol/config.py" and (
+                if relative == "minecrafthub/config.py" and (
                     version != VERSION or rev != WINEGDK_BUILD_REV
                 ):
                     archive.writestr(relative, _config(version, rev))
@@ -182,9 +182,9 @@ class CandidateMetadataTests(unittest.TestCase):
         # the verifier's safe, read-only AppImage inspection path.
         path = self.base / name
         root = self.base / (name + ".AppDir")
-        bol_root = root / "usr/bin/bol"
-        _copy_bol_payload(bol_root)
-        config = bol_root / "config.py"
+        mch_root = root / "usr/bin/minecrafthub"
+        _copy_bol_payload(mch_root)
+        config = mch_root / "config.py"
         license_path = root / "usr/share/licenses/minecraft-hub/LICENSE"
         license_path.parent.mkdir(parents=True)
         if version != VERSION or rev != WINEGDK_BUILD_REV:
@@ -228,9 +228,9 @@ class CandidateMetadataTests(unittest.TestCase):
             self.skipTest("dpkg-deb not installed")
         root = self.base / ("deb-root-" + architecture)
         control = root / "DEBIAN/control"
-        bol_root = root / "usr/lib/minecraft-hub/bol"
-        _copy_bol_payload(bol_root)
-        config = bol_root / "config.py"
+        mch_root = root / "usr/lib/minecraft-hub/minecrafthub"
+        _copy_bol_payload(mch_root)
+        config = mch_root / "config.py"
         control.parent.mkdir(parents=True)
         copyright_file = root / "usr/share/doc/minecraft-hub/copyright"
         copyright_file.parent.mkdir(parents=True)
@@ -276,9 +276,9 @@ class CandidateMetadataTests(unittest.TestCase):
             self.skipTest("rpm tooling not installed")
         root = self.base / ("rpm-root-" + architecture)
         top = self.base / ("rpm-top-" + architecture)
-        bol_root = root / "usr/lib/bedrock-on-linux/bol"
-        _copy_bol_payload(bol_root)
-        config = bol_root / "config.py"
+        mch_root = root / "usr/lib/minecraft-hub/minecrafthub"
+        _copy_bol_payload(mch_root)
+        config = mch_root / "config.py"
         license_file = root / "usr/share/licenses/bedrock-on-linux/LICENSE"
         license_file.parent.mkdir(parents=True)
         desktop = root / "usr/share/applications/bedrock-on-linux.desktop"
@@ -347,7 +347,7 @@ class CandidateMetadataTests(unittest.TestCase):
         # carrying it is published. No candidate may be verified in that state,
         # otherwise a release could ship pointing at an engine nobody built.
         staged = self._staged_checkout()
-        config = staged / "bol/config.py"
+        config = staged / "minecrafthub/config.py"
         original = config.read_text(encoding="utf-8")
         config.write_text(
             re.sub(
@@ -417,7 +417,7 @@ class CandidateMetadataTests(unittest.TestCase):
         self.assertIn("embeds WINEGDK_BUILD_REV=wow64-archs-stale", result.stderr)
 
     def test_rejects_missing_bol_payload_file(self):
-        result = self._run(self._pyz(missing={"bol/gpu_safety.py"}))
+        result = self._run(self._pyz(missing={"minecrafthub/gpu_safety.py"}))
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("missing: gpu_safety.py", result.stderr)
 
@@ -425,7 +425,7 @@ class CandidateMetadataTests(unittest.TestCase):
         result = self._run(
             self._pyz(
                 replacements={
-                    "bol/wine_registry.py": b"# stale registry implementation\n",
+                    "minecrafthub/wine_registry.py": b"# stale registry implementation\n",
                 }
             )
         )
@@ -436,7 +436,7 @@ class CandidateMetadataTests(unittest.TestCase):
         result = self._run(
             self._pyz(
                 extras={
-                    "bol/obsolete_release_helper.py": b"# obsolete\n",
+                    "minecrafthub/obsolete_release_helper.py": b"# obsolete\n",
                 }
             )
         )
@@ -447,8 +447,8 @@ class CandidateMetadataTests(unittest.TestCase):
         result = self._run(
             self._pyz(
                 extras={
-                    "bol/__pycache__/gpu_safety.cpython-312.pyc": b"cache",
-                    "bol/leftover.pyc": b"cache",
+                    "minecrafthub/__pycache__/gpu_safety.cpython-312.pyc": b"cache",
+                    "minecrafthub/leftover.pyc": b"cache",
                 }
             )
         )
@@ -516,7 +516,7 @@ class BuildReleaseHygieneTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             checkout = Path(directory)
             scripts = checkout / "scripts"
-            bol = checkout / "bol"
+            bol = checkout / "minecrafthub"
             data = checkout / "data"
             dist = checkout / "dist"
             scripts.mkdir()
@@ -644,10 +644,24 @@ class RunCandidateSafetyTests(unittest.TestCase):
         self.tmpdir = tempfile.TemporaryDirectory()
         self.checkout = Path(self.tmpdir.name)
         (self.checkout / "scripts").mkdir()
+        # The candidate is checked out under ``minecrafthub/`` -- the
+        # canonical package name since E5 -- and the test process
+        # imports through ``bol/`` (the compatibility shim). Both have
+        # to be present at the same path so the run-candidate script,
+        # which sets PYTHONPATH to the checkout root, can resolve either.
+        (self.checkout / "minecrafthub").mkdir()
         (self.checkout / "bol").mkdir()
+        shutil.copy2(
+            ROOT / "bol" / "__init__.py", self.checkout / "bol" / "__init__.py"
+        )
+        # ``bol`` is a single-file package; its __path__ is hardcoded to
+        # ``../minecrafthub`` relative to itself. The test checkout uses
+        # the same relative layout, so the hardcoded path resolves.
         shutil.copy2(RUN_CANDIDATE, self.checkout / "scripts/run-candidate.sh")
-        (self.checkout / "bol/__init__.py").write_text("", encoding="utf-8")
-        (self.checkout / "bol/config.py").write_text(_config(), encoding="utf-8")
+        (self.checkout / "minecrafthub/__init__.py").write_text("", encoding="utf-8")
+        (self.checkout / "minecrafthub/config.py").write_text(
+            _config(), encoding="utf-8"
+        )
         self.archive = (
             self.checkout / "dist" / (f"GDK-Proton-xuser-{WINEGDK_BUILD_REV}.tar.gz")
         )
@@ -658,7 +672,7 @@ class RunCandidateSafetyTests(unittest.TestCase):
         self.launch_marker = self.checkout / "launched.txt"
         self.validation_marker = self.checkout / "validated.txt"
 
-        (self.checkout / "bol/winegdk.py").write_text(
+        (self.checkout / "minecrafthub/winegdk.py").write_text(
             "import os\n"
             "from pathlib import Path\n"
             "WINEGDK_OUT = Path(os.environ['TEST_ENGINE'])\n"
@@ -670,7 +684,7 @@ class RunCandidateSafetyTests(unittest.TestCase):
             "    return WINEGDK_OUT\n",
             encoding="utf-8",
         )
-        (self.checkout / "bol/vkd3d.py").write_text(
+        (self.checkout / "minecrafthub/vkd3d.py").write_text(
             "import os\n"
             "from pathlib import Path\n"
             "from types import SimpleNamespace\n"

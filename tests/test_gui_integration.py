@@ -13,10 +13,10 @@ import pytest
 from PySide6.QtWidgets import QComboBox, QMainWindow, QPushButton, QTabWidget
 from PySide6.QtTest import QSignalSpy
 
-# Ensure we can import bol modules
+# Ensure we can import minecrafthub modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from bol.gui import (
+from minecrafthub.gui import (
     MainWindow, Theme, VersionPicker, ProfileMenu, Worker,
     _resolve_gui_display, _owned_x11_socket_displays,
     SwitchRow,
@@ -91,8 +91,8 @@ def main_window(qapp, monkeypatch, temp_settings_dir):
         # Settings written by a test have to survive into the next load()
         # for the persistence tests, which the harness's static dict cannot
         # do -- so those two are re-pointed at the temp file here.
-        monkeypatch.setattr("bol.gui.load_settings", load)
-        monkeypatch.setattr("bol.gui.save_settings", save)
+        monkeypatch.setattr("minecrafthub.gui.load_settings", load)
+        monkeypatch.setattr("minecrafthub.gui.save_settings", save)
         yield window
 
 
@@ -235,13 +235,13 @@ class TestProfileMenu:
 
     def test_profile_menu_creation(self, qapp):
         """A menu that has never been rebuilt offers nothing to click."""
-        with mock.patch("bol.gui.QApplication.instance", return_value=qapp):
+        with mock.patch("minecrafthub.gui.QApplication.instance", return_value=qapp):
             menu = ProfileMenu(None)
             assert _button_labels(menu) == []
 
     def test_profile_menu_rebuild(self, qapp):
         """Every profile gets a row, and Default is always offered."""
-        with mock.patch("bol.gui.QApplication.instance", return_value=qapp):
+        with mock.patch("minecrafthub.gui.QApplication.instance", return_value=qapp):
             menu = ProfileMenu(None)
             menu.rebuild([{"name": "Profile 1", "path": "/path/to/profile1"},
                           {"name": "Profile 2", "path": "/path/to/profile2"}],
@@ -254,7 +254,7 @@ class TestProfileMenu:
 
     def test_profile_menu_rebuild_replaces_the_previous_rows(self, qapp):
         """Reopening the menu must not stack a second copy of every row."""
-        with mock.patch("bol.gui.QApplication.instance", return_value=qapp):
+        with mock.patch("minecrafthub.gui.QApplication.instance", return_value=qapp):
             menu = ProfileMenu(None)
             profiles = [{"name": "Only", "path": "/p/only"}]
             menu.rebuild(profiles, None)
@@ -263,7 +263,7 @@ class TestProfileMenu:
             assert _button_labels(menu) == first
 
     def test_switching_a_profile_reports_its_path(self, qapp):
-        with mock.patch("bol.gui.QApplication.instance", return_value=qapp):
+        with mock.patch("minecrafthub.gui.QApplication.instance", return_value=qapp):
             menu = ProfileMenu(None)
             menu.rebuild([{"name": "Second", "path": "/p/second"}], None)
             picked = []
@@ -272,7 +272,7 @@ class TestProfileMenu:
             assert picked == ["/p/second"]
 
     def test_the_default_profile_switches_to_no_path(self, qapp):
-        with mock.patch("bol.gui.QApplication.instance", return_value=qapp):
+        with mock.patch("minecrafthub.gui.QApplication.instance", return_value=qapp):
             menu = ProfileMenu(None)
             menu.rebuild([{"name": "Second", "path": "/p/second"}],
                          "/p/second")
@@ -291,14 +291,14 @@ class TestVersionPicker:
 
     def test_version_picker_creation(self, qapp):
         """A fresh picker is empty and unfiltered."""
-        with mock.patch("bol.gui.QApplication.instance", return_value=qapp):
+        with mock.patch("minecrafthub.gui.QApplication.instance", return_value=qapp):
             picker = VersionPicker(None)
             assert picker.list.count() == 0
             assert picker.search.text() == ""
 
     def test_version_picker_set_labels(self, qapp):
         """VersionPicker displays version labels."""
-        with mock.patch("bol.gui.QApplication.instance", return_value=qapp):
+        with mock.patch("minecrafthub.gui.QApplication.instance", return_value=qapp):
             picker = VersionPicker(None)
             labels = ["1.0.0", "1.1.0", "1.2.0"]
             picker.set_labels(labels, "1.1.0")
@@ -306,21 +306,21 @@ class TestVersionPicker:
 
     def test_version_picker_filter(self, qapp):
         """Filtering hides exactly the rows that do not match."""
-        with mock.patch("bol.gui.QApplication.instance", return_value=qapp):
+        with mock.patch("minecrafthub.gui.QApplication.instance", return_value=qapp):
             picker = VersionPicker(None)
             picker.set_labels(["1.0.0", "1.1.0", "2.0.0"], "1.0.0")
             picker.search.setText("1.1")
             assert _visible_rows(picker) == ["1.1.0"]
 
     def test_version_picker_filter_is_case_insensitive(self, qapp):
-        with mock.patch("bol.gui.QApplication.instance", return_value=qapp):
+        with mock.patch("minecrafthub.gui.QApplication.instance", return_value=qapp):
             picker = VersionPicker(None)
             picker.set_labels(["1.2.3  ·  BETA", "1.2.4"], "1.2.4")
             picker.search.setText("beta")
             assert _visible_rows(picker) == ["1.2.3  ·  BETA"]
 
     def test_clearing_the_filter_brings_every_row_back(self, qapp):
-        with mock.patch("bol.gui.QApplication.instance", return_value=qapp):
+        with mock.patch("minecrafthub.gui.QApplication.instance", return_value=qapp):
             picker = VersionPicker(None)
             picker.set_labels(["1.0.0", "1.1.0", "2.0.0"], "1.0.0")
             picker.search.setText("2.")
@@ -351,7 +351,7 @@ class TestRememberedVersion:
         ]
 
     def _picked(self, window, saved):
-        with mock.patch("bol.gui.load_settings", lambda: {"mc_version": saved}):
+        with mock.patch("minecrafthub.gui.load_settings", lambda: {"mc_version": saved}):
             window._on_versions_loaded(self._versions())
         return window.selected_version()["tag"]
 
@@ -372,8 +372,8 @@ class TestRememberedVersion:
     def test_choosing_a_build_saves_the_build_and_not_the_label(self,
                                                                 main_window):
         saved = {}
-        with mock.patch("bol.gui.load_settings", lambda: dict(saved)), \
-                mock.patch("bol.gui.save_settings", saved.update):
+        with mock.patch("minecrafthub.gui.load_settings", lambda: dict(saved)), \
+                mock.patch("minecrafthub.gui.save_settings", saved.update):
             main_window._on_versions_loaded(self._versions())
             main_window.set_version("26.44")
         assert saved["mc_version"] == "1.26.44.3"
@@ -389,7 +389,7 @@ class TestSettingsPersistence:
     def test_save_and_load_theme_setting(self, main_window, temp_settings_dir):
         """Theme setting persists across saves."""
         main_window.settings["light_theme"] = True
-        from bol.gui import save_settings, load_settings
+        from minecrafthub.gui import save_settings, load_settings
         save_settings(main_window.settings)
 
         loaded = load_settings()
@@ -397,7 +397,7 @@ class TestSettingsPersistence:
 
     def test_settings_file_created(self, temp_settings_dir):
         """Settings file is created on save."""
-        from bol.gui import save_settings
+        from minecrafthub.gui import save_settings
         settings = {"test_key": "test_value"}
         save_settings(settings)
 

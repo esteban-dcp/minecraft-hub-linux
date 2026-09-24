@@ -5,7 +5,7 @@
  * Minecraft.Windows.exe -- by snapshot name, or by PEB image path when Wine
  * reports no name for it. Returns 0 on success.
  *
- * Build: x86_64-w64-mingw32-gcc -O2 -municode -s injector.c -o ../bol/injector.exe
+ * Build: x86_64-w64-mingw32-gcc -O2 -municode -s injector.c -o ../minecrafthub/injector.exe
  * Usage: injector.exe <dll-path> [process.exe]   (default Minecraft.Windows.exe)
  */
 #include <windows.h>

@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import auth
+from minecrafthub import auth
 
 
 class _Response:
@@ -154,7 +154,7 @@ class ClockSkewGuidanceTests(unittest.TestCase):
     @staticmethod
     def _message(category, unsynchronized):
         auth._record_xbl_preauth_diagnostic("user-auth", category)
-        with mock.patch("bol.network.clock_is_unsynchronized",
+        with mock.patch("minecrafthub.network.clock_is_unsynchronized",
                         return_value=unsynchronized):
             return auth.xbl_preauth_error_message()
 
@@ -181,7 +181,7 @@ class ClockSkewGuidanceTests(unittest.TestCase):
 
     def test_a_failing_clock_probe_never_breaks_the_message(self):
         auth._record_xbl_preauth_diagnostic("user-auth", "account")
-        with mock.patch("bol.network.clock_is_unsynchronized",
+        with mock.patch("minecrafthub.network.clock_is_unsynchronized",
                         side_effect=OSError("no timedatectl")):
             self.assertIn("Xbox profile", auth.xbl_preauth_error_message())
 

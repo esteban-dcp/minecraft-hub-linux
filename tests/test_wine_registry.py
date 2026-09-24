@@ -8,8 +8,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import wine_registry
-from bol.log import BolError
+from minecrafthub import wine_registry
+from minecrafthub.log import BolError
 
 
 SYSTEM = b"""WINE REGISTRY Version 2
@@ -152,7 +152,7 @@ class OfflineRegistryTests(unittest.TestCase):
             prefix = self.make_prefix(td)
             before = (prefix / "system.reg").read_bytes()
             with mock.patch(
-                    "bol.prefix.require_prefix_idle",
+                    "minecrafthub.prefix.require_prefix_idle",
                     side_effect=BolError("prefix active")):
                 with self.assertRaisesRegex(BolError, "prefix active"):
                     wine_registry.update_prefix_registry(

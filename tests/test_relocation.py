@@ -14,9 +14,9 @@ if str(_project_root) not in sys.path:
 
 import pytest
 
-from bol import config
-from bol import relocation
-from bol.relocation import migrate_data, paths_overlap, RelocationError
+from minecrafthub import config
+from minecrafthub import relocation
+from minecrafthub.relocation import migrate_data, paths_overlap, RelocationError
 
 
 def test_default_install_location():

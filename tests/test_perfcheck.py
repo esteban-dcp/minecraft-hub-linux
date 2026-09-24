@@ -17,7 +17,7 @@ from collections import namedtuple
 from pathlib import Path
 from unittest import mock
 
-from bol import launch, perfcheck
+from minecrafthub import launch, perfcheck
 
 
 _Usage = namedtuple("_Usage", "total used free")

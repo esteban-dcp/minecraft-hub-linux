@@ -7,8 +7,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import proton
-from bol.log import BolError
+from minecrafthub import proton
+from minecrafthub.log import BolError
 
 
 class ProtonArchiveTests(unittest.TestCase):

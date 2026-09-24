@@ -27,7 +27,7 @@ for m in webkit2gtk-4.1 openssl; do
   pkg-config --exists "$m" || { echo "!! need the $m development package" >&2; exit 1; }
 done
 
-COMMIT="$(grep -m1 '^XODUS_SOURCE_COMMIT = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
+COMMIT="$(grep -m1 '^XODUS_SOURCE_COMMIT = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
 [ -n "$COMMIT" ] || { echo "!! XODUS_SOURCE_COMMIT missing from bol/config.py" >&2; exit 1; }
 # The patches are part of what the binary is, so the rev names them too: a
 # revision has to name exactly one set of bytes, or a rebuild silently

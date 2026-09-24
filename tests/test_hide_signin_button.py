@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bol.brarchive import BrArchive
-from bol.fixups import hide_signin_button
+from minecrafthub.brarchive import BrArchive
+from minecrafthub.fixups import hide_signin_button
 
 
 class HideSigninButtonTests(unittest.TestCase):

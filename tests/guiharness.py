@@ -24,7 +24,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtCore import QCoreApplication, QEvent, QTimer
 from PySide6.QtWidgets import QApplication
 
-from bol import gui, log, xodus
+from minecrafthub import gui, log, xodus
 
 
 def qt_app():

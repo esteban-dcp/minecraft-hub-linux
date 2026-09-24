@@ -15,8 +15,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import launch, ntsync
-from bol.util import LAUNCHER_OWNED_ENV, custom_env_map
+from minecrafthub import launch, ntsync
+from minecrafthub.util import LAUNCHER_OWNED_ENV, custom_env_map
 
 
 ROOT = Path(__file__).resolve().parents[1]

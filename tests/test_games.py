@@ -8,8 +8,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import games
-from bol.log import BolError
+from minecrafthub import games
+from minecrafthub.log import BolError
 
 
 _CATALOGUE = (
@@ -538,7 +538,7 @@ class InstalledBuildTests(unittest.TestCase):
             worlds = base / "prefix" / "minecraftWorlds" / "my world"
             worlds.mkdir(parents=True)
 
-            with mock.patch("bol.prefix._mc_running", return_value=False):
+            with mock.patch("minecrafthub.prefix._mc_running", return_value=False):
                 freed = games.remove_build(drop)
 
             self.assertGreater(freed, 0)
@@ -556,7 +556,7 @@ class InstalledBuildTests(unittest.TestCase):
             content.symlink_to(root)
             with (
                 mock.patch.object(games, "CONTENT", content),
-                mock.patch("bol.prefix._mc_running", return_value=False),
+                mock.patch("minecrafthub.prefix._mc_running", return_value=False),
             ):
                 games.remove_build(root)
 
@@ -570,7 +570,7 @@ class InstalledBuildTests(unittest.TestCase):
             elsewhere = _write_game(base / "somewhere" / "Minecraft")
 
             with (
-                mock.patch("bol.prefix._mc_running", return_value=False),
+                mock.patch("minecrafthub.prefix._mc_running", return_value=False),
                 self.assertRaises(BolError),
             ):
                 games.remove_build(elsewhere)
@@ -582,7 +582,7 @@ class InstalledBuildTests(unittest.TestCase):
             _write_store_game(games_dir / "minecraft-bedrock" / "release" / "1.26.44.3")
 
             with (
-                mock.patch("bol.prefix._mc_running", return_value=False),
+                mock.patch("minecrafthub.prefix._mc_running", return_value=False),
                 self.assertRaises(BolError),
             ):
                 games.remove_build(games_dir)
@@ -596,7 +596,7 @@ class InstalledBuildTests(unittest.TestCase):
             )
 
             with (
-                mock.patch("bol.prefix._mc_running", return_value=True),
+                mock.patch("minecrafthub.prefix._mc_running", return_value=True),
                 self.assertRaises(BolError),
             ):
                 games.remove_build(root)
@@ -611,7 +611,7 @@ class InstalledBuildTests(unittest.TestCase):
             _write_store_game(games_dir / "minecraft-bedrock" / "release" / "1.26.44.3")
 
             with (
-                mock.patch("bol.prefix._mc_running", return_value=False),
+                mock.patch("minecrafthub.prefix._mc_running", return_value=False),
                 self.assertRaises(BolError),
             ):
                 games.remove_build(games_dir / "minecraft-bedrock" / "release")
@@ -627,7 +627,7 @@ class InstalledBuildTests(unittest.TestCase):
             (stray / "readme.txt").write_text("mine", encoding="utf-8")
 
             with (
-                mock.patch("bol.prefix._mc_running", return_value=False),
+                mock.patch("minecrafthub.prefix._mc_running", return_value=False),
                 self.assertRaises(BolError),
             ):
                 games.remove_build(stray)

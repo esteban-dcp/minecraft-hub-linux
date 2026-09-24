@@ -14,11 +14,11 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VER="$(grep -m1 '^VERSION = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
-REV="$(grep -m1 '^WINEGDK_BUILD_REV = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
-ENGINE_SHA="$(grep -m1 '^WINEGDK_ARCHIVE_SHA256 = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
-XCURL_REV="$(grep -m1 '^OPENSSL_XCURL_REV = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
-XCURL_SHA="$(grep -m1 '^OPENSSL_XCURL_ARCHIVE_SHA256 = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
+VER="$(grep -m1 '^VERSION = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
+REV="$(grep -m1 '^WINEGDK_BUILD_REV = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
+ENGINE_SHA="$(grep -m1 '^WINEGDK_ARCHIVE_SHA256 = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
+XCURL_REV="$(grep -m1 '^OPENSSL_XCURL_REV = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
+XCURL_SHA="$(grep -m1 '^OPENSSL_XCURL_ARCHIVE_SHA256 = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
 OUT="$SRC/dist"
 mkdir -p "$OUT"
 CHANNEL="${BOL_RELEASE_CHANNEL:-release}"
@@ -162,13 +162,13 @@ PYZ="$OUT/minecraft-hub-${VER}.pyz"
 rm -rf "$STAGE"
 rm -f -- "$PYZ"
 mkdir -p "$STAGE"
-cp -r "$SRC/bol" "$STAGE/bol"
+cp -r "$SRC/minecrafthub" "$STAGE/minecrafthub"
 install -m644 "$SRC/LICENSE" "$STAGE/LICENSE"
 install -Dm644 "$SRC/data/icon.png" "$STAGE/data/icon.png"
-find "$STAGE/bol" -name __pycache__ -type d -exec rm -rf {} +
+find "$STAGE/minecrafthub" -name __pycache__ -type d -exec rm -rf {} +
 cat > "$STAGE/__main__.py" <<'PYEOF'
 import sys
-from bol.cli import main
+from minecrafthub.cli import main
 try:
     main()
 except KeyboardInterrupt:

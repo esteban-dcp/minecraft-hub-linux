@@ -17,7 +17,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import launch, waylanddrv
+from minecrafthub import launch, waylanddrv
 
 
 ROOT = Path(__file__).resolve().parents[1]

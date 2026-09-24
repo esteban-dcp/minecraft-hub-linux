@@ -14,7 +14,7 @@ from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest import mock
 
-from bol import gui, xodus
+from minecrafthub import gui, xodus
 from tests.guiharness import headless_window, qt_app
 
 
@@ -470,7 +470,7 @@ class XboxPreauthWarmUpTests(unittest.TestCase):
             self.assertTrue(warm.called)
 
     def test_the_refreshed_token_is_handed_to_xbl_preauth(self):
-        from bol import auth
+        from minecrafthub import auth
         with headless_window() as window:
             with mock.patch.object(auth, "msa_load",
                                    return_value={"refresh_token": "r"}), \
@@ -484,7 +484,7 @@ class XboxPreauthWarmUpTests(unittest.TestCase):
             preauth.assert_called_once_with("a", 7)
 
     def test_no_stored_account_is_not_an_error(self):
-        from bol import auth
+        from minecrafthub import auth
         with headless_window() as window:
             with mock.patch.object(auth, "msa_load", return_value=None), \
                     mock.patch.object(auth, "xbl_preauth") as preauth:
@@ -495,7 +495,7 @@ class XboxPreauthWarmUpTests(unittest.TestCase):
         # PLAY re-runs the chain and is where a real failure gets reported,
         # with its diagnostic attached. A warm-up must never surface as a
         # crash in a background thread.
-        from bol import auth
+        from minecrafthub import auth
         with headless_window() as window:
             with mock.patch.object(auth, "msa_load",
                                    side_effect=RuntimeError("offline")):

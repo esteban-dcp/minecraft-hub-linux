@@ -64,14 +64,14 @@ print("\t".join((values["VERSION"], values["WINEGDK_BUILD_REV"],
 PY
 }
 
-expected_metadata="$(read_config_metadata "$SRC/bol/config.py")" \
-  || die "could not read release metadata from bol/config.py"
+expected_metadata="$(read_config_metadata "$SRC/minecrafthub/config.py")" \
+  || die "could not read release metadata from minecrafthub/config.py"
 IFS=$'\t' read -r expected_version expected_rev expected_source_commit \
   expected_archive_sha expected_xcurl_rev expected_xcurl_sha \
   expected_umu_version expected_umu_archive_sha expected_umu_run_sha \
   <<< "$expected_metadata"
 [[ -n "$expected_version" && -n "$expected_rev" ]] \
-  || die "empty VERSION or WINEGDK_BUILD_REV in bol/config.py"
+  || die "empty VERSION or WINEGDK_BUILD_REV in minecrafthub/config.py"
 [[ "$expected_archive_sha" =~ ^[0-9a-f]{64}$ ]] \
   || die "WINEGDK_ARCHIVE_SHA256 is not a lowercase SHA-256 pin"
 for pin in "$expected_xcurl_sha" "$expected_umu_archive_sha" \
@@ -88,7 +88,7 @@ if (( $# == 0 )); then
     "$OUT/MinecraftHub-${expected_version}-x86_64.AppImage"
 fi
 
-tmp="$(mktemp -d "${TMPDIR:-/tmp}/bol-candidate-verify.XXXXXX")"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/minecraft-hub-candidate-verify.XXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
 
 index=0
@@ -110,9 +110,9 @@ for supplied in "$@"; do
   case "$name" in
     *.pyz)
       [[ -x "$artifact" ]] || die "$name is not executable"
-      config="$root/bol/config.py"
+      config="$root/minecrafthub/config.py"
       license="$root/LICENSE"
-      payload_bol="$root/bol"
+      payload_bol="$root/minecrafthub"
       icon="$root/data/icon.png"
       launcher="$artifact"
       if ! python3 - "$artifact" "$root" <<'PY'
@@ -142,10 +142,10 @@ try:
         for entry in entries:
             name = entry.filename
             pure = pathlib.PurePosixPath(name)
-            if not pure.parts or pure.parts[0] != "bol":
+            if not pure.parts or pure.parts[0] != "minecrafthub":
                 continue
             if pure.is_absolute() or ".." in pure.parts:
-                raise ValueError(f"unsafe bol/ zipapp member: {name}")
+                raise ValueError(f"unsafe minecrafthub/ zipapp member: {name}")
             if entry.is_dir():
                 continue
             relative = pure.as_posix()
@@ -154,9 +154,9 @@ try:
             mode = (entry.external_attr >> 16) & 0xFFFF
             file_type = stat.S_IFMT(mode)
             if file_type not in (0, stat.S_IFREG):
-                raise ValueError(f"non-regular bol/ zipapp member: {name}")
+                raise ValueError(f"non-regular minecrafthub/ zipapp member: {name}")
             if relative in seen:
-                raise ValueError(f"duplicate bol/ zipapp member: {relative}")
+                raise ValueError(f"duplicate minecrafthub/ zipapp member: {relative}")
             seen.add(relative)
             output = destination.joinpath(*pure.parts)
             output.parent.mkdir(parents=True, exist_ok=True)
@@ -182,8 +182,8 @@ PY
         || die "$name control Architecture=$deb_arch, expected amd64"
       dpkg-deb -x "$artifact" "$root" >/dev/null \
         || die "could not extract $name"
-      config="$root/usr/lib/minecraft-hub/bol/config.py"
-      payload_bol="$root/usr/lib/minecraft-hub/bol"
+      config="$root/usr/lib/minecraft-hub/minecrafthub/config.py"
+      payload_bol="$root/usr/lib/minecraft-hub/minecrafthub"
       license="$root/usr/share/doc/minecraft-hub/copyright"
       desktop="$root/usr/share/applications/minecraft-hub.desktop"
       icon="$root/usr/share/icons/hicolor/256x256/apps/minecraft-hub.png"
@@ -213,8 +213,8 @@ PY
       fi
       ( cd "$root" && rpm2cpio "$artifact" | cpio -idm --quiet ) \
         || die "could not extract $name"
-      config="$root/usr/lib/minecraft-hub/bol/config.py"
-      payload_bol="$root/usr/lib/minecraft-hub/bol"
+      config="$root/usr/lib/minecraft-hub/minecrafthub/config.py"
+      payload_bol="$root/usr/lib/minecraft-hub/minecrafthub"
       license="$root/usr/share/licenses/minecraft-hub/LICENSE"
       desktop="$root/usr/share/applications/minecraft-hub.desktop"
       icon="$root/usr/share/icons/hicolor/256x256/apps/minecraft-hub.png"
@@ -247,15 +247,15 @@ PY
         rm -rf "$root"
         if unsquashfs -no-progress -o "$offset" -d "$root" "$artifact" \
             >/dev/null 2>&1 \
-            && [[ -f "$root/usr/bin/bol/config.py" ]]; then
+            && [[ -f "$root/usr/bin/minecrafthub/config.py" ]]; then
           extracted=true
           break
         fi
       done
       [[ "$extracted" == true ]] \
         || die "could not safely extract a MinecraftHub payload from $name"
-      config="$root/usr/bin/bol/config.py"
-      payload_bol="$root/usr/bin/bol"
+      config="$root/usr/bin/minecrafthub/config.py"
+      payload_bol="$root/usr/bin/minecrafthub"
       license="$root/usr/share/licenses/minecraft-hub/LICENSE"
       desktop="$root/minecraft-hub.desktop"
       icon="$root/minecraft-hub.png"
@@ -311,7 +311,7 @@ PY
       ;;
   esac
 
-  [[ -f "$config" ]] || die "$name does not contain bol/config.py"
+  [[ -f "$config" ]] || die "$name does not contain minecrafthub/config.py"
   [[ -f "$license" ]] || die "$name does not contain the project LICENSE"
   cmp -s "$SRC/LICENSE" "$license" \
     || die "$name embeds a project LICENSE different from this checkout"
@@ -341,9 +341,9 @@ PY
   [[ "$actual_rev" == "$expected_rev" ]] \
     || die "$name embeds WINEGDK_BUILD_REV=$actual_rev, expected $expected_rev"
   [[ "$actual_source_commit" == "$expected_source_commit" ]] \
-    || die "$name embeds a WineGDK source commit different from bol/config.py"
+    || die "$name embeds a WineGDK source commit different from minecrafthub/config.py"
   [[ "$actual_archive_sha" == "$expected_archive_sha" ]] \
-    || die "$name embeds an engine archive SHA-256 different from bol/config.py"
+    || die "$name embeds an engine archive SHA-256 different from minecrafthub/config.py"
   [[ "$actual_xcurl_rev:$actual_xcurl_sha" == \
       "$expected_xcurl_rev:$expected_xcurl_sha" ]] \
     || die "$name embeds a different OpenSSL XCurl payload pin"
@@ -353,11 +353,11 @@ PY
 
   # VERSION/revision pins are necessary but not sufficient: an older build can
   # carry the same metadata while omitting a newly added safety module. Compare
-  # every regular bol/ payload byte against this checkout and reject missing,
+  # every regular minecrafthub/ payload byte against this checkout and reject missing,
   # stale, or unexpected files. Runtime bytecode/cache files are deliberately
   # ignored because they are neither source inputs nor portable artifacts.
-  [[ -d "$payload_bol" ]] || die "$name does not contain a bol/ package"
-  if ! python3 - "$SRC/bol" "$payload_bol" "$name" <<'PY'
+  [[ -d "$payload_bol" ]] || die "$name does not contain a minecrafthub/ package"
+  if ! python3 - "$SRC/minecrafthub" "$payload_bol" "$name" <<'PY'
 import stat
 import sys
 from pathlib import Path
@@ -393,7 +393,7 @@ extra = sorted(actual.keys() - expected.keys())
 stale = sorted(path for path in expected.keys() & actual.keys()
                if expected[path] != actual[path])
 if missing or stale or extra:
-    print(f"{artifact_name} bol/ payload differs from this checkout:",
+    print(f"{artifact_name} minecrafthub/ payload differs from this checkout:",
           file=sys.stderr)
     for label, paths in (("missing", missing), ("stale", stale),
                          ("extra", extra)):
@@ -409,4 +409,4 @@ PY
   index=$((index + 1))
 done
 
-echo "Candidate metadata verified against bol/config.py; application payload matches checkout."
+echo "Candidate metadata verified against minecrafthub/config.py; application payload matches checkout."

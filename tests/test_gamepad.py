@@ -4,8 +4,8 @@
 import os
 import unittest
 
-from bol import gamepad
-from bol.gamepad import (
+from minecrafthub import gamepad
+from minecrafthub.gamepad import (
     ABS_HAT0X,
     ABS_HAT0Y,
     ABS_RY,

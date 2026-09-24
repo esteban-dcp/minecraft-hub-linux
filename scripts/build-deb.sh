@@ -4,7 +4,7 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VER="$(grep -m1 '^VERSION = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
+VER="$(grep -m1 '^VERSION = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
 OUT="$SRC/dist"
 PKG="$OUT/deb"
 SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1782250551}"

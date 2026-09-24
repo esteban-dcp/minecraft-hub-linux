@@ -15,8 +15,8 @@ from PySide6.QtWidgets import (QApplication, QMessageBox, QPushButton,
 from PySide6.QtCore import QPoint, QTimer
 from PySide6.QtGui import QColor
 
-from bol import gui
-from bol.navigation import choose_neighbour, reading_order, within
+from minecrafthub import gui
+from minecrafthub.navigation import choose_neighbour, reading_order, within
 from tests.guiharness import headless_window, qt_app
 
 
@@ -115,7 +115,7 @@ class RingTestCase(unittest.TestCase):
     def window(self, **settings):
         """A shown window with a controller already reporting."""
         settings.setdefault("controller_nav", True)
-        patch = mock.patch("bol.navigation.GamepadReader", FakeReader)
+        patch = mock.patch("minecrafthub.navigation.GamepadReader", FakeReader)
         patch.start()
         self.addCleanup(patch.stop)
         context = headless_window(**settings)
@@ -223,7 +223,7 @@ class MovementTests(RingTestCase):
         self.assertGreater(after, 20)
 
     def _pointer_at(self, point):
-        return mock.patch("bol.navigation.QCursor.pos", return_value=point)
+        return mock.patch("minecrafthub.navigation.QCursor.pos", return_value=point)
 
     def test_the_mouse_taking_over_hides_the_ring(self):
         window = self.window()
@@ -486,7 +486,7 @@ class InputGateTests(RingTestCase):
         self.assertFalse(window.nav_legend.isVisible())
 
     def test_a_machine_with_no_input_layer_is_not_an_error(self):
-        patch = mock.patch("bol.navigation.GamepadReader", DeadReader)
+        patch = mock.patch("minecrafthub.navigation.GamepadReader", DeadReader)
         patch.start()
         self.addCleanup(patch.stop)
         with headless_window(controller_nav=True) as window:

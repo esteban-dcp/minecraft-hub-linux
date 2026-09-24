@@ -6,7 +6,7 @@ import re
 import unittest
 from pathlib import Path
 
-from bol.config import (
+from minecrafthub.config import (
     WINEGDK_SOURCE_COMMIT,
     WINEGDK_SOURCE_MANIFEST_SHA256,
 )

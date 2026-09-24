@@ -9,8 +9,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol.log import BolError
-from bol import vkd3d
+from minecrafthub.log import BolError
+from minecrafthub import vkd3d
 
 
 def _digest(data):
@@ -499,7 +499,7 @@ class ActivationTests(EngineFixture, unittest.TestCase):
             enforce_pins=False))
         self.assert_active_variant(vkd3d.EXT_DGC)
 
-        with mock.patch("bol.vkd3d.os.replace") as replace:
+        with mock.patch("minecrafthub.vkd3d.os.replace") as replace:
             self.assertFalse(vkd3d.activate_vkd3d_variant(
                 root, self.BUILD_REV, vkd3d.EXT_DGC,
                 enforce_pins=False))
@@ -535,7 +535,7 @@ class ActivationTests(EngineFixture, unittest.TestCase):
                     raise OSError("injected replacement failure")
             return real_replace(source, destination)
 
-        with mock.patch("bol.vkd3d.os.replace", side_effect=fail_second_stage):
+        with mock.patch("minecrafthub.vkd3d.os.replace", side_effect=fail_second_stage):
             with self.assertRaisesRegex(BolError, "activation failed"):
                 vkd3d.activate_vkd3d_variant(
                     root, self.BUILD_REV, vkd3d.EXT_DGC,

@@ -18,7 +18,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import presence
+from minecrafthub import presence
 
 _TIMEOUT = 10
 

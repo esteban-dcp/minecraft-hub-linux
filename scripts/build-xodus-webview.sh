@@ -22,9 +22,9 @@ for t in ldd patchelf tar xz sha256sum python3; do
   command -v "$t" >/dev/null || { echo "!! need $t" >&2; exit 1; }
 done
 
-REV="$(grep -m1 '^XODUS_WEBVIEW_REV = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
+REV="$(grep -m1 '^XODUS_WEBVIEW_REV = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
 [ -n "$REV" ] || { echo "!! XODUS_WEBVIEW_REV missing from bol/config.py" >&2; exit 1; }
-EXEC_DIR="$(grep -m1 '^XODUS_WEBVIEW_EXEC_DIR = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
+EXEC_DIR="$(grep -m1 '^XODUS_WEBVIEW_EXEC_DIR = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
 [ -n "$EXEC_DIR" ] || { echo "!! XODUS_WEBVIEW_EXEC_DIR missing from bol/config.py" >&2; exit 1; }
 export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1784308597}"
 

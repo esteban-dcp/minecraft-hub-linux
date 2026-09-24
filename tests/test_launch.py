@@ -9,7 +9,7 @@ from contextlib import ExitStack
 from pathlib import Path
 from unittest import mock
 
-from bol import launch
+from minecrafthub import launch
 
 
 class ReadyLaunchHarness:

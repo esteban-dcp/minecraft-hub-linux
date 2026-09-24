@@ -9,7 +9,7 @@ import time
 import unittest
 from unittest import mock
 
-from bol import network
+from minecrafthub import network
 
 
 class NetworkDiagnosticsTests(unittest.TestCase):

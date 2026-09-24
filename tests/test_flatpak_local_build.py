@@ -18,7 +18,7 @@ try:
 except ImportError:  # pragma: no cover - matches build script prerequisite
     yaml = None
 
-from bol.config import VERSION, WINEGDK_BUILD_REV
+from minecrafthub.config import VERSION, WINEGDK_BUILD_REV
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -134,14 +134,14 @@ class FlatpakLocalManifestTests(unittest.TestCase):
         self.checkout = Path(self.tmpdir.name)
         (self.checkout / "scripts").mkdir()
         (self.checkout / "flatpak").mkdir()
-        (self.checkout / "bol").mkdir()
+        (self.checkout / "minecrafthub").mkdir()
         (self.checkout / "data").mkdir()
 
         shutil.copy2(ROOT / "scripts/build-flatpak.sh",
                      self.checkout / "scripts/build-flatpak.sh")
         shutil.copy2(ROOT / f"flatpak/{APPID}.yml",
                      self.checkout / f"flatpak/{APPID}.yml")
-        (self.checkout / "bol/config.py").write_text(
+        (self.checkout / "minecrafthub/config.py").write_text(
             f'VERSION = "{VERSION}"\n'
             f'WINEGDK_BUILD_REV = "{WINEGDK_BUILD_REV}"\n',
             encoding="utf-8",
@@ -201,7 +201,7 @@ class FlatpakLocalManifestTests(unittest.TestCase):
             [
                 {"type": "file", "path": "../minecraft-hub"},
                 {"type": "file", "path": "../LICENSE"},
-                {"type": "dir", "path": "../bol", "dest": "bol"},
+                {"type": "dir", "path": "../minecrafthub", "dest": "minecrafthub"},
                 {"type": "file", "path": "../data/icon.png",
                  "dest": "data"},
                 {"type": "file", "path": f"{APPID}.desktop",
@@ -214,9 +214,9 @@ class FlatpakLocalManifestTests(unittest.TestCase):
         self.assertIn("-name __pycache__", commands)
         self.assertIn("-name '*.pyc' -delete", commands)
         bol_source = next(source for source in app["sources"]
-                          if source.get("dest") == "bol")
+                          if source.get("dest") == "minecrafthub")
         self.assertEqual((resolved.parent / bol_source["path"]).resolve(),
-                         (self.checkout / "bol").resolve())
+                         (self.checkout / "minecrafthub").resolve())
         self.assertIn(f"VERSION={VERSION}", result.stdout)
         self.assertIn(f"WINEGDK_BUILD_REV={WINEGDK_BUILD_REV}", result.stdout)
         self.assertIn("no build or release performed", result.stdout)

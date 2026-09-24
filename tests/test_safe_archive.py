@@ -9,8 +9,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import fixups, prefix
-from bol.archive import safe_extract_tar
+from minecrafthub import fixups, prefix
+from minecrafthub.archive import safe_extract_tar
 
 
 class SafeTarExtractionTests(unittest.TestCase):

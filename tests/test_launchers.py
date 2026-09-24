@@ -5,9 +5,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import launchers
-from bol.config import PRODUCTS
-from bol.log import BolError
+from minecrafthub import launchers
+from minecrafthub.config import PRODUCTS
+from minecrafthub.log import BolError
 
 
 class RegistryTests(unittest.TestCase):
@@ -60,8 +60,8 @@ class BedrockLauncherDelegationTests(unittest.TestCase):
     so the test surface is small -- it is a thin facade until E5."""
 
     def test_install_delegates_to_games_install_game(self):
-        from bol import games
-        from bol.launchers.bedrock import BedrockLauncher
+        from minecrafthub import games
+        from minecrafthub.launchers.bedrock import BedrockLauncher
 
         launcher = BedrockLauncher()
         product = PRODUCTS[0]
@@ -74,8 +74,8 @@ class BedrockLauncherDelegationTests(unittest.TestCase):
         self.assertEqual(root, Path("/tmp/build"))
 
     def test_version_str_uses_bedrock_version_parser(self):
-        from bol.launchers import bedrock as _bedrock_mod
-        from bol.launchers.bedrock import BedrockLauncher
+        from minecrafthub.launchers import bedrock as _bedrock_mod
+        from minecrafthub.launchers.bedrock import BedrockLauncher
 
         launcher = BedrockLauncher()
         with mock.patch.object(
@@ -85,16 +85,16 @@ class BedrockLauncherDelegationTests(unittest.TestCase):
         parser.assert_called_once_with(Path("/tmp/build"))
 
     def test_is_running_delegates_to_bedrock_is_running(self):
-        from bol.launchers import bedrock as _bedrock_mod
-        from bol.launchers.bedrock import BedrockLauncher
+        from minecrafthub.launchers import bedrock as _bedrock_mod
+        from minecrafthub.launchers.bedrock import BedrockLauncher
 
         launcher = BedrockLauncher()
         with mock.patch.object(_bedrock_mod, "bedrock_is_running", return_value=True):
             self.assertTrue(launcher.is_running())
 
     def test_install_record_path_matches_games_convention(self):
-        from bol import games
-        from bol.launchers.bedrock import BedrockLauncher
+        from minecrafthub import games
+        from minecrafthub.launchers.bedrock import BedrockLauncher
 
         launcher = BedrockLauncher()
         # The path is a bare name (it lives inside a build folder), so
@@ -102,7 +102,7 @@ class BedrockLauncherDelegationTests(unittest.TestCase):
         self.assertEqual(launcher.install_record_path().name, games._INSTALL_METADATA)
 
     def test_gpu_profile_is_empty_for_bedrock_today(self):
-        from bol.launchers.bedrock import BedrockLauncher
+        from minecrafthub.launchers.bedrock import BedrockLauncher
 
         # Bedrock uses the global GPU safety thresholds; the launcher's
         # override map is empty. A future launcher that needs different
@@ -114,8 +114,8 @@ class GamesDispatchTests(unittest.TestCase):
     """bol.games routes version_str and version_key through the launcher."""
 
     def test_version_str_for_bedrock_uses_launcher(self):
-        from bol import games
-        from bol.launchers.bedrock import BedrockLauncher
+        from minecrafthub import games
+        from minecrafthub.launchers.bedrock import BedrockLauncher
 
         launcher = BedrockLauncher()
         with mock.patch.object(launcher, "version_str", return_value="9.9.9") as parser:
@@ -129,7 +129,7 @@ class GamesDispatchTests(unittest.TestCase):
         parser.assert_called_once_with(Path("/tmp/build"))
 
     def test_version_str_for_unknown_family_returns_none(self):
-        from bol import games
+        from minecrafthub import games
 
         with mock.patch.object(games, "_launcher_for_family", return_value=None):
             self.assertIsNone(
@@ -137,7 +137,7 @@ class GamesDispatchTests(unittest.TestCase):
             )
 
     def test_version_key_for_unknown_family_falls_back_to_string_tuple(self):
-        from bol import games
+        from minecrafthub import games
 
         with mock.patch.object(games, "_launcher_for_family", return_value=None):
             self.assertEqual(
@@ -150,8 +150,8 @@ class ShimsStayCallableTests(unittest.TestCase):
     working until callers can be moved to the launcher."""
 
     def test_mc_version_str_shim_uses_bedrock_parser(self):
-        from bol import games
-        from bol.launchers import bedrock as _bedrock_mod
+        from minecrafthub import games
+        from minecrafthub.launchers import bedrock as _bedrock_mod
 
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
@@ -164,8 +164,8 @@ class ShimsStayCallableTests(unittest.TestCase):
                 spy.assert_called_once_with(folder)
 
     def test_prefix_mc_running_shim_uses_bedrock_running_check(self):
-        from bol import prefix
-        from bol.launchers import bedrock as _bedrock_mod
+        from minecrafthub import prefix
+        from minecrafthub.launchers import bedrock as _bedrock_mod
 
         with mock.patch.object(_bedrock_mod, "bedrock_is_running",
                                return_value=True) as spy:

@@ -12,8 +12,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import proton, winegdk
-from bol.log import BolError
+from minecrafthub import proton, winegdk
+from minecrafthub.log import BolError
 
 
 class ManagedProtonTests(unittest.TestCase):
@@ -59,7 +59,7 @@ class WineGDKInstallTests(unittest.TestCase):
         self.engine = self.proton_dir / "GDK-Proton-xuser"
         self.cache = self.base / "cache"
         self.validator = mock.Mock(name="validate_engine_manifest")
-        fake_vkd3d = types.ModuleType("bol.vkd3d")
+        fake_vkd3d = types.ModuleType("minecrafthub.vkd3d")
         fake_vkd3d.validate_engine_manifest = self.validator
 
         self._patches = [
@@ -68,7 +68,7 @@ class WineGDKInstallTests(unittest.TestCase):
             mock.patch.object(winegdk, "CACHE", self.cache),
             mock.patch.object(winegdk, "WINEGDK_BUILD_REV", self.REV),
             mock.patch.object(winegdk, "WINEGDK_ARCHIVE_SHA256", "0" * 64),
-            mock.patch.dict(sys.modules, {"bol.vkd3d": fake_vkd3d}),
+            mock.patch.dict(sys.modules, {"minecrafthub.vkd3d": fake_vkd3d}),
             mock.patch.dict(os.environ, {"BOL_ENGINE_ARCHIVE": ""}),
         ]
         for patcher in self._patches:

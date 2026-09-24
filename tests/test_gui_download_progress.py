@@ -15,7 +15,7 @@ or widget that is narrower than the download it carries.
 
 import unittest
 
-from bol import gui
+from minecrafthub import gui
 
 from tests.guiharness import headless_window, qt_app
 

@@ -17,7 +17,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from bol import xodus
+from minecrafthub import xodus
 
 
 def _cli_archive(path, body=b"#!/bin/sh\nexit 0\n"):

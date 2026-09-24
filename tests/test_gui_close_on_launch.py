@@ -19,8 +19,8 @@ import threading
 import unittest
 from pathlib import Path
 
-from bol import gui
-from bol.gui import window_action_for_launch
+from minecrafthub import gui
+from minecrafthub.gui import window_action_for_launch
 from tests.guiharness import headless_window, qt_app
 
 

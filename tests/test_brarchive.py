@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bol.brarchive import (
+from minecrafthub.brarchive import (
     BrArchive,
     BrArchiveError,
     ENTRY_SIZE,

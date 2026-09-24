@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REV="$(grep -m1 '^WINEGDK_BUILD_REV = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
+REV="$(grep -m1 '^WINEGDK_BUILD_REV = ' "$SRC/minecrafthub/config.py" | cut -d'"' -f2)"
 [[ -n "$REV" ]] || { echo "!! could not read WINEGDK_BUILD_REV" >&2; exit 1; }
 
 ARCHIVE="$SRC/dist/GDK-Proton-xuser-${REV}.tar.gz"
