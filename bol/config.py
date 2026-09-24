@@ -205,14 +205,29 @@ GDK_LINKS_URL = ("https://raw.githubusercontent.com/"
 # and worthless without the licence, so this costs no confidentiality; the
 # content id below is checked against every indexed URL so a bad or tampered
 # index cannot point the downloader at a different product.
-MC_PRODUCTS = (
-    {"id": "release", "product": "9NBLGGH2JHXJ", "channel": "release",
+#
+# PRODUCTS is the canonical hub registry: every Microsoft Store product the
+# hub can install through xodus-cli lives here, with a ``family`` so future
+# Dungeons/Legends/Java entries share the same downloader without colliding
+# with Bedrock ids, and a ``kind``/``launcher`` so the right install/launch
+# implementation is picked at runtime. ``MC_PRODUCTS`` is kept as a derived
+# view of the Bedrock-only entries for backwards compatibility with code
+# written before the registry existed.
+PRODUCTS = (
+    {"family": "minecraft-bedrock", "id": "release", "kind": "bedrock",
+     "launcher": "bedrock",
+     "product": "9NBLGGH2JHXJ", "channel": "release",
      "content_id": "7792d9ce-355a-493c-afbd-768f4a77c3b0",
      "name": "Minecraft for Windows", "beta": False},
-    {"id": "preview", "product": "9P5X4QVLC2XR", "channel": "preview",
+    {"family": "minecraft-bedrock", "id": "preview", "kind": "bedrock",
+     "launcher": "bedrock",
+     "product": "9P5X4QVLC2XR", "channel": "preview",
      "content_id": "98bd2335-9b01-4e4c-bd05-ccc01614078b",
      "name": "Minecraft Preview for Windows", "beta": True},
 )
+
+MC_PRODUCTS = tuple(entry for entry in PRODUCTS
+                    if entry["family"] == "minecraft-bedrock")
 
 
 def _legacy_install_location_file() -> Path:

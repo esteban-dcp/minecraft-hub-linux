@@ -41,7 +41,7 @@ from .config import (
     GDK_LINKS_URL,
     LEGACY_XODUS_KEYRING,
     LOGS,
-    MC_PRODUCTS,
+    PRODUCTS,
     WINEGDK_PREBUILT_REPO,
     XODUS_ARCHIVE_SHA256,
     XODUS_BIN,
@@ -200,13 +200,43 @@ _WARNED = {}
 
 
 def edition(edition_id):
-    """The MC_PRODUCTS entry for an edition id, or None."""
-    return next((e for e in MC_PRODUCTS if e["id"] == edition_id), None)
+    """The registry entry for a Bedrock edition id, or None.
+
+    Backed by ``PRODUCTS`` and filtered to the bedrock family: the public name
+    "edition" is the Bedrock-era term, kept here so callers that pre-date the
+    hub registry keep working. Use :func:`product` for multi-family lookups.
+    """
+    return product(edition_id, family="minecraft-bedrock")
 
 
 def list_editions():
-    """The editions Xodus can install."""
-    return [dict(e) for e in MC_PRODUCTS]
+    """The Bedrock editions Xodus can install. See :func:`edition`."""
+    return list_products(family="minecraft-bedrock")
+
+
+def product(product_id, family=None):
+    """The registry entry for ``(family, id)``, or for ``id`` across families.
+
+    ``family`` disambiguates when two families reuse the same short id. When
+    omitted, the first match in declaration order wins; the hub does not
+    reuse ids across families today, so callers that don't care which family
+    a product belongs to can ignore the argument.
+    """
+    for entry in PRODUCTS:
+        if entry["id"] != product_id:
+            continue
+        if family is not None and entry["family"] != family:
+            continue
+        return dict(entry)
+    return None
+
+
+def list_products(family=None):
+    """Every product in the registry, or every product in one family."""
+    out = [dict(e) for e in PRODUCTS]
+    if family is not None:
+        out = [e for e in out if e["family"] == family]
+    return out
 
 
 def version_key(version):
