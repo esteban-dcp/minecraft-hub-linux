@@ -38,6 +38,7 @@ from .relocation import migrate_data, paths_overlap, DIRS_TO_MOVE, FILES_TO_MOVE
 from .content import game_content_dir, import_content
 from .doctor import acknowledge_gpu_crash, gpu_crash_acknowledgement_status
 from .games import installed_builds, list_editions, list_versions, remove_build
+from .gui_library import LibraryView
 from .gamesetup import do_setup
 from .inject import run_injector
 from .launch import direct_launch_readiness, launch, single_window_session
@@ -1126,10 +1127,12 @@ class MainWindow(QMainWindow):
         self.settings_page = self._build_settings()
         self.changelog_page = self._build_changelog()
         self.profiles_page = self._build_profiles_page()
+        self.library_page = self._build_library()
         self.stack.addWidget(self.hero_page)
         self.stack.addWidget(self.settings_page)
         self.stack.addWidget(self.changelog_page)
         self.stack.addWidget(self.profiles_page)
+        self.stack.addWidget(self.library_page)
         self.stack.setCurrentWidget(self.hero_page)
 
         self.status_row = self._build_status_row()
@@ -1250,6 +1253,8 @@ class MainWindow(QMainWindow):
         bl.addWidget(ver_lbl)
         gh_btn = btn("GitHub", self._open_github, kind="ghost", h=26)
         bl.addWidget(gh_btn)
+        self.library_btn = btn("Library", self.toggle_library, kind="ghost", h=26)
+        bl.addWidget(self.library_btn)
         row.addWidget(brand)
         row.addStretch(1)
 
@@ -2477,6 +2482,46 @@ class MainWindow(QMainWindow):
             self.stack.setCurrentWidget(self.changelog_page)
             self.load_changelogs()
             self._nav_follow_page(self.changelog_page)
+
+    def toggle_library(self):
+        if self.stack.currentWidget() is self.library_page:
+            self.stack.setCurrentWidget(self.hero_page)
+            self._nav_follow_page()
+        else:
+            # The library reads from on-disk state, so refresh before
+            # showing -- a build installed from the CLI shows up here
+            # without the user having to restart the launcher.
+            self.library_page.refresh()
+            self.stack.setCurrentWidget(self.library_page)
+            self._nav_follow_page(self.library_page)
+
+    def _on_library_game(self, product):
+        """Route a library-tile click to the existing Bedrock flow.
+
+        E6 wires the library as a multi-game *view*; the detail panel
+        for a non-Bedrock product will arrive with the launcher for
+        that family. Today Bedrock is the only family with a wired
+        launcher, so every click that names a Bedrock edition opens
+        the hero with that selection, and every other product falls
+        back to ``setup --game <family>`` through the toast channel.
+        """
+        family = product.get("family", "")
+        if family == "minecraft-bedrock":
+            # Bedrock: route to the existing hero with the right edition.
+            from .xodus import edition as _edition
+            self._select_edition(product.get("id") or "release")
+            self.stack.setCurrentWidget(self.hero_page)
+            return
+        # Future family: trigger the install flow with --game set.
+        from .log import info as _info
+        _info(f"{product.get('name', family)} ({family}) is not yet "
+              "supported by this build of the hub. Check for an update "
+              "that adds the launcher.")
+
+    def _build_library(self) -> QWidget:
+        page = LibraryView()
+        page.game_selected.connect(self._on_library_game)
+        return page
 
     def _nav_follow_page(self, page=None):
         """Move the controller highlight onto the page just opened.
