@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.wyze3306.BedrockOnLinux</id>
-  <launchable type="desktop-id">io.github.wyze3306.BedrockOnLinux.desktop</launchable>
+  <id>io.github.esteban-dcp.MinecraftHub</id>
+  <launchable type="desktop-id">io.github.esteban-dcp.MinecraftHub.desktop</launchable>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
 
-  <name>BedrockOnLinux</name>
-  <summary>Run Minecraft Bedrock on Linux</summary>
+  <name>Minecraft Hub for Linux</name>
+  <summary>Install and play Minecraft Bedrock, Dungeons and Legends on Linux</summary>
 
   <description>
     <p>
-      BedrockOnLinux installs and runs the Windows (GDK) edition of Minecraft
-      Bedrock on Linux. One app does everything automatically:
+      Minecraft Hub for Linux installs and runs the Windows (GDK) editions of
+      Minecraft Bedrock, Dungeons and Legends on Linux. Today Bedrock ships in
+      the launcher; Dungeons and Legends plug into the same download and launch
+      infrastructure as they become available.
     </p>
     <ul>
       <li>downloads the Minecraft version you pick;</li>
@@ -38,18 +40,20 @@
   <keywords>
     <keyword>minecraft</keyword>
     <keyword>bedrock</keyword>
+    <keyword>dungeons</keyword>
+    <keyword>legends</keyword>
     <keyword>gdk</keyword>
     <keyword>wine</keyword>
     <keyword>proton</keyword>
     <keyword>mcbe</keyword>
   </keywords>
 
-  <url type="homepage">https://github.com/Wyze3306/BedrockOnLinux</url>
-  <url type="bugtracker">https://github.com/Wyze3306/BedrockOnLinux/issues</url>
-  <url type="vcs-browser">https://github.com/Wyze3306/BedrockOnLinux</url>
+  <url type="homepage">https://github.com/esteban-dcp/minecraft-hub-linux</url>
+  <url type="bugtracker">https://github.com/esteban-dcp/minecraft-hub-linux/issues</url>
+  <url type="vcs-browser">https://github.com/esteban-dcp/minecraft-hub-linux</url>
 
-  <developer id="io.github.wyze3306">
-    <name>Wyze3306</name>
+  <developer id="io.github.esteban-dcp">
+    <name>esteban-dcp</name>
   </developer>
 
   <branding>
@@ -60,7 +64,7 @@
   <screenshots>
     <screenshot type="default">
       <caption>The launcher: pick a version, sign in, play</caption>
-      <image>https://raw.githubusercontent.com/Wyze3306/BedrockOnLinux/v2.2.6/screenshot.png</image>
+      <image>https://raw.githubusercontent.com/esteban-dcp/minecraft-hub-linux/main/screenshot.png</image>
     </screenshot>
   </screenshots>
 

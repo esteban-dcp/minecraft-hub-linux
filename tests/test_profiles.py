@@ -201,10 +201,10 @@ def test_shortcut_uses_isolated_bol_home_and_handles_spaces(tmp_path):
         executable=launcher,
     )
     text = entry.read_text()
-    assert "Name=BedrockOnLinux — Family Two" in text
+    assert "Name=Minecraft Hub for Linux — Family Two" in text
     assert f'BOL_HOME="{profile}"' in text
     assert f'"{launcher.resolve()}" gui' in text
-    assert "Icon=bedrock-on-linux" in text
+    assert "Icon=minecraft-hub" in text
     assert entry.stat().st_mode & 0o777 == 0o644
 
 
@@ -219,7 +219,7 @@ def test_profile_launch_command_is_copyable_for_steam(tmp_path):
 def test_shortcut_created_inside_appimage_uses_persistent_appimage(tmp_path):
     appimage = tmp_path / "Bedrock On Linux.AppImage"
     appimage.write_bytes(b"AppImage")
-    mounted_launcher = tmp_path / ".mount_bol/usr/bin/bedrock-on-linux"
+    mounted_launcher = tmp_path / ".mount_mch/usr/bin/minecraft-hub"
     mounted_launcher.parent.mkdir(parents=True)
     mounted_launcher.write_text("#!/bin/sh\n")
 
@@ -276,7 +276,7 @@ def test_flatpak_profile_shortcut_is_rejected_before_private_desktop_write(
         tmp_path):
     with pytest.raises(BolError, match="cannot be installed from the Flatpak"):
         require_profile_shortcuts_supported(
-            {"FLATPAK_ID": "io.github.wyze3306.BedrockOnLinux"},
+            {"FLATPAK_ID": "io.github.esteban-dcp.MinecraftHub"},
             tmp_path / "not-flatpak-info",
         )
 
@@ -292,7 +292,7 @@ def test_play_shortcut_launches_the_game_without_the_launcher_window(
     )
 
     text = entry.read_text()
-    assert entry.name == "bedrock-on-linux-play.desktop"
+    assert entry.name == "minecraft-hub-play.desktop"
     assert "Name=Minecraft Bedrock\n" in text
     assert f'Exec="{launcher.resolve()}" play\n' in text
     # The default installation is not profile-scoped.
@@ -314,7 +314,7 @@ def test_play_shortcut_for_a_profile_keeps_its_isolated_home(tmp_path):
     )
 
     text = entry.read_text()
-    assert entry.name == "bedrock-on-linux-play-family-two.desktop"
+    assert entry.name == "minecraft-hub-play-family-two.desktop"
     assert "Name=Minecraft Bedrock — Family Two\n" in text
     assert f'Exec=env BOL_HOME="{profile}" "{launcher.resolve()}" play\n' \
         in text
@@ -354,14 +354,14 @@ def test_flatpak_play_shortcut_is_refused_with_a_runnable_alternative(
         tmp_path):
     with pytest.raises(BolError) as refusal:
         require_shortcuts_supported(
-            {"FLATPAK_ID": "io.github.wyze3306.BedrockOnLinux"},
+            {"FLATPAK_ID": "io.github.esteban-dcp.MinecraftHub"},
             tmp_path / "not-flatpak-info",
         )
 
     message = str(refusal.value)
     assert "cannot be written from the Flatpak sandbox" in message
     # A refusal with no way forward is what sends users to the issue tracker.
-    assert "flatpak run io.github.wyze3306.BedrockOnLinux play" in message
+    assert "flatpak run io.github.esteban-dcp.MinecraftHub play" in message
 
 
 def test_delete_profile_removes_folder_and_shortcuts(tmp_path):
@@ -391,10 +391,10 @@ def test_rename_profile_renames_folder_and_shortcuts(tmp_path):
     assert meta["name"] == "New Name"
     assert meta["slug"] == "new-name"
 
-    assert not (apps / "bedrock-on-linux-profile-old-name.desktop").exists()
-    assert not (apps / "bedrock-on-linux-play-old-name.desktop").exists()
-    assert (apps / "bedrock-on-linux-profile-new-name.desktop").exists()
-    assert (apps / "bedrock-on-linux-play-new-name.desktop").exists()
+    assert not (apps / "minecraft-hub-profile-old-name.desktop").exists()
+    assert not (apps / "minecraft-hub-play-old-name.desktop").exists()
+    assert (apps / "minecraft-hub-profile-new-name.desktop").exists()
+    assert (apps / "minecraft-hub-play-new-name.desktop").exists()
 
 
 def test_create_profile_reserved_default_rejected(tmp_path):

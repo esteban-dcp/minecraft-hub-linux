@@ -13,7 +13,7 @@
 # the mirror; then re-pin config to the new rev/SHA.
 #
 # No opaque prebuilt binary is used: the runtime DLLs are stock msys2 packages
-# (verified by SHA), and the two BedrockOnLinux DLLs are built from source.
+# (verified by SHA), and the two DLLs the Bedrock GDK needs are built from source.
 set -Eeuo pipefail
 
 WORK="${1:?usage: build-openssl-xcurl.sh WORKDIR}"

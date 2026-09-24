@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the BedrockOnLinux Flatpak.
+# Build the Minecraft Hub for Linux Flatpak.
 #
 #   scripts/build-flatpak.sh             # local dev + nightly candidate: the
 #                                        # app module is this working tree
@@ -8,14 +8,14 @@
 #                                        # git tag referenced in the manifest,
 #                                        # and a checkout equal to it)
 #
-# Output: dist/BedrockOnLinux-<ver>-x86_64.flatpak. Uses the flatpak-builder
+# Output: dist/MinecraftHub-<ver>-x86_64.flatpak. Uses the flatpak-builder
 # binary if present, else the no-root org.flatpak.Builder Flatpak.
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VER="$(grep -m1 '^VERSION = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
 REV="$(grep -m1 '^WINEGDK_BUILD_REV = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
-APPID="io.github.wyze3306.BedrockOnLinux"
+APPID="io.github.esteban-dcp.MinecraftHub"
 MANIFEST="$SRC/flatpak/$APPID.yml"
 DEV_MANIFEST="$SRC/flatpak/.$APPID.resolved.yml"   # same dir → ../ paths resolve
 RTVER="$(grep -m1 'runtime-version:' "$MANIFEST" | tr -d "'\" " | cut -d: -f2)"
@@ -26,7 +26,7 @@ RTNAME="$(grep -m1 '^runtime:' "$MANIFEST" | tr -d "'\" " | cut -d: -f2)"
 SDKNAME="$(grep -m1 '^sdk:' "$MANIFEST" | tr -d "'\" " | cut -d: -f2)"
 OUT="$SRC/dist"
 WORK="$OUT/flatpak-build"
-BUNDLE="$OUT/BedrockOnLinux-${VER}-x86_64.flatpak"
+BUNDLE="$OUT/MinecraftHub-${VER}-x86_64.flatpak"
 
 [[ -n "$VER" && -n "$REV" ]] || {
   echo "could not read VERSION/WINEGDK_BUILD_REV from bol/config.py" >&2
@@ -60,7 +60,7 @@ manifest, version = sys.argv[1:]
 with open(manifest, encoding="utf-8") as source:
     data = yaml.safe_load(source)
 app = data["modules"][-1]
-if app.get("name") != "bedrock-on-linux":
+if app.get("name") != "minecraft-hub":
     raise SystemExit("app module must be last in the tracked manifest")
 git_sources = [item for item in app.get("sources", [])
                if item.get("type") == "git"]
@@ -124,15 +124,15 @@ if missing:
     raise SystemExit("bol/config.py lacks literal " + ", ".join(sorted(missing)))
 
 required = [
-    checkout / "bedrock-on-linux",
+    checkout / "minecraft-hub",
     checkout / "LICENSE",
     checkout / "bol",
     checkout / "data/icon.png",
-    checkout / "flatpak/io.github.wyze3306.BedrockOnLinux.desktop",
+    checkout / "flatpak/io.github.esteban-dcp.MinecraftHub.desktop",
 ]
 if keep_metainfo:
     required.append(
-        checkout / "flatpak/io.github.wyze3306.BedrockOnLinux.metainfo.xml")
+        checkout / "flatpak/io.github.esteban-dcp.MinecraftHub.metainfo.xml")
 for path in required:
     if not path.exists():
         raise SystemExit(f"local Flatpak source missing: {path}")
@@ -141,20 +141,20 @@ for path in required:
 # so eu-strip cannot open Tcl/Tk's 0555-mode .so files read-write.
 manifest["build-options"] = {"strip": False, "no-debuginfo": True}
 app = manifest["modules"][-1]
-if app.get("name") != "bedrock-on-linux":
+if app.get("name") != "minecraft-hub":
     raise SystemExit("app module must be last")
 app["sources"] = [
-    {"type": "file", "path": "../bedrock-on-linux"},
+    {"type": "file", "path": "../minecraft-hub"},
     {"type": "file", "path": "../LICENSE"},
     {"type": "dir", "path": "../bol", "dest": "bol"},
     {"type": "file", "path": "../data/icon.png", "dest": "data"},
-    {"type": "file", "path": "io.github.wyze3306.BedrockOnLinux.desktop",
+    {"type": "file", "path": "io.github.esteban-dcp.MinecraftHub.desktop",
      "dest": "flatpak"},
 ]
 if keep_metainfo:
     app["sources"].append(
         {"type": "file",
-         "path": "io.github.wyze3306.BedrockOnLinux.metainfo.xml",
+         "path": "io.github.esteban-dcp.MinecraftHub.metainfo.xml",
          "dest": "flatpak"})
 else:
     # Without appstreamcli, flatpak-builder's appstream compose stage fails on
@@ -308,7 +308,7 @@ PY
 # `flatpak build` reports the verifier's real exit status directly.
 flatpak build "$WORK/builddir" \
   /app/bin/python3 -c "$PAYLOAD_CHECK_CODE" \
-  /app/lib/bedrock-on-linux/bol "$EXPECTED_BOL_HASHES" "$VER" "$REV"
+  /app/lib/minecraft-hub/bol "$EXPECTED_BOL_HASHES" "$VER" "$REV"
 
 flatpak build-bundle "$WORK/repo" "$BUNDLE" "$APPID"
 [[ -s "$BUNDLE" ]] || { echo "Flatpak bundle was not created" >&2; exit 1; }

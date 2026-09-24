@@ -24,10 +24,10 @@
  *   x86_64-w64-mingw32-gcc -O2 -Wall -Wextra -o dxr-probe.exe dxr-probe.c \
  *       -ldxguid -luuid -lole32
  *   VKD3D_CONFIG=force_raw_va_cbv \
- *   WINEPREFIX=~/.local/share/bedrock-on-linux/compatdata/pfx \
- *   PROTONPATH=~/.local/share/bedrock-on-linux/proton/GDK-Proton-xuser \
+ *   WINEPREFIX=~/.local/share/minecraft-hub/compatdata/pfx \
+ *   PROTONPATH=~/.local/share/minecraft-hub/proton/GDK-Proton-xuser \
  *   PROTON_VERB=run PROTON_USE_WOW64=1 GAMEID=umu-default \
- *   ~/.local/share/bedrock-on-linux/umu/umu-run ./dxr-probe.exe
+ *   ~/.local/share/minecraft-hub/umu/umu-run ./dxr-probe.exe
  *
  * Every line is "key: value" so the whole output can be pasted into an issue.
  * It reads no account state and sends nothing over the network.

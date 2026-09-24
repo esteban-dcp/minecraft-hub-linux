@@ -142,9 +142,9 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           path: |
-            dist/bedrock-on-linux_*.deb
-            dist/bedrock-on-linux-*.rpm
-            dist/bedrock-on-linux-*.pyz
+            dist/minecraft-hub_*.deb
+            dist/minecraft-hub-*.rpm
+            dist/minecraft-hub-*.pyz
             dist/BedrockOnLinux-*-x86_64.AppImage
             dist/BedrockOnLinux-*-x86_64.AppImage.zsync
             dist/BedrockOnLinux-*-x86_64.flatpak
@@ -178,9 +178,9 @@ jobs:
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
         with:
           subject-path: |
-            dist/bedrock-on-linux_*.deb
-            dist/bedrock-on-linux-*.rpm
-            dist/bedrock-on-linux-*.pyz
+            dist/minecraft-hub_*.deb
+            dist/minecraft-hub-*.rpm
+            dist/minecraft-hub-*.pyz
             dist/BedrockOnLinux-*-x86_64.AppImage
             dist/BedrockOnLinux-*-x86_64.AppImage.zsync
             dist/BedrockOnLinux-*-x86_64.flatpak
@@ -308,9 +308,9 @@ jobs:
           body_path: release-notes.md
           generate_release_notes: true
           files: |
-            dist/bedrock-on-linux_*.deb
-            dist/bedrock-on-linux-*.rpm
-            dist/bedrock-on-linux-*.pyz
+            dist/minecraft-hub_*.deb
+            dist/minecraft-hub-*.rpm
+            dist/minecraft-hub-*.pyz
             dist/BedrockOnLinux-*-x86_64.AppImage
             dist/BedrockOnLinux-*-x86_64.AppImage.zsync
             dist/BedrockOnLinux-*-x86_64.flatpak

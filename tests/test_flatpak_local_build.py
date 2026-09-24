@@ -22,7 +22,7 @@ from bol.config import VERSION, WINEGDK_BUILD_REV
 
 
 ROOT = Path(__file__).resolve().parents[1]
-APPID = "io.github.wyze3306.BedrockOnLinux"
+APPID = "io.github.esteban-dcp.MinecraftHub"
 
 
 def _flatpak_payload_check_code():
@@ -146,7 +146,7 @@ class FlatpakLocalManifestTests(unittest.TestCase):
             f'WINEGDK_BUILD_REV = "{WINEGDK_BUILD_REV}"\n',
             encoding="utf-8",
         )
-        (self.checkout / "bedrock-on-linux").write_text(
+        (self.checkout / "minecraft-hub").write_text(
             "#!/usr/bin/env python3\n", encoding="utf-8")
         (self.checkout / "LICENSE").write_text(
             "fixture license\n", encoding="utf-8")
@@ -195,11 +195,11 @@ class FlatpakLocalManifestTests(unittest.TestCase):
         self.assertTrue(resolved.is_file())
         manifest = yaml.safe_load(resolved.read_text(encoding="utf-8"))
         app = manifest["modules"][-1]
-        self.assertEqual(app["name"], "bedrock-on-linux")
+        self.assertEqual(app["name"], "minecraft-hub")
         self.assertEqual(
             app["sources"],
             [
-                {"type": "file", "path": "../bedrock-on-linux"},
+                {"type": "file", "path": "../minecraft-hub"},
                 {"type": "file", "path": "../LICENSE"},
                 {"type": "dir", "path": "../bol", "dest": "bol"},
                 {"type": "file", "path": "../data/icon.png",

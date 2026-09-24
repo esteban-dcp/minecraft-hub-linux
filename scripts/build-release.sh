@@ -41,10 +41,10 @@ cleanup_build_trees() {
   # Build scratch only. The historical AppImage builder placed its cache in
   # dist/.cache; current builds use XDG_CACHE_HOME, so remove that legacy tree
   # as well. Do not touch config.txt, engine candidates, or XCurl assets.
-  rm -rf "$OUT/appimagetool" "$OUT/BedrockOnLinux.AppDir" "$OUT/deb" \
+  rm -rf "$OUT/appimagetool" "$OUT/MinecraftHub.AppDir" "$OUT/deb" \
          "$OUT/rpm" "$OUT/rpmbuild" \
          "$OUT/portable" "$OUT/pyz-stage" "$OUT/flatpak-build" "$OUT/.cache"
-  rm -f "$OUT"/BedrockOnLinux-*-SHA256SUMS.tmp.* \
+  rm -f "$OUT"/MinecraftHub-*-SHA256SUMS.tmp.* \
         "$OUT/appimage-build.log" "$OUT/flatpak-build.log"
 }
 trap cleanup_build_trees EXIT
@@ -55,14 +55,14 @@ cleanup_build_trees
 # OpenSSL archives have independent build/review cycles and must be preserved.
 shopt -s nullglob
 old_application_artifacts=(
-  "$OUT"/bedrock-on-linux_*.deb
-  "$OUT"/bedrock-on-linux-*.rpm
-  "$OUT"/bedrock-on-linux-*.pyz
-  "$OUT"/BedrockOnLinux-x86_64.AppImage
-  "$OUT"/BedrockOnLinux-*-x86_64.AppImage
-  "$OUT"/BedrockOnLinux-*-x86_64.AppImage.zsync
-  "$OUT"/BedrockOnLinux-*-x86_64.flatpak
-  "$OUT"/BedrockOnLinux-*-SHA256SUMS
+  "$OUT"/minecraft-hub_*.deb
+  "$OUT"/minecraft-hub-*.rpm
+  "$OUT"/minecraft-hub-*.pyz
+  "$OUT"/MinecraftHub-x86_64.AppImage
+  "$OUT"/MinecraftHub-*-x86_64.AppImage
+  "$OUT"/MinecraftHub-*-x86_64.AppImage.zsync
+  "$OUT"/MinecraftHub-*-x86_64.flatpak
+  "$OUT"/MinecraftHub-*-SHA256SUMS
   "$OUT"/*portable.tar.gz
 )
 if (( ${#old_application_artifacts[@]} )); then
@@ -117,11 +117,11 @@ declare -a built_artifacts=("$ENGINE" "$XCURL")
 declare -a verified_artifacts=()
 declare -a required_failures=()
 
-echo "== BedrockOnLinux $VER — building UNRELEASED candidate artifacts =="
+echo "== MinecraftHub $VER — building UNRELEASED candidate artifacts =="
 echo "  ✓ dist/$ENGINE_ASSET (pinned engine input)"
 echo "  ✓ dist/$XCURL_ASSET (pinned online-login input)"
 
-DEB="$OUT/bedrock-on-linux_${VER}_amd64.deb"
+DEB="$OUT/minecraft-hub_${VER}_amd64.deb"
 if command -v dpkg-deb >/dev/null; then
   rm -f -- "$DEB"
   if bash "$SRC/scripts/build-deb.sh" >/dev/null && [[ -s "$DEB" ]]; then
@@ -138,7 +138,7 @@ else
   required_failures+=(".deb")
 fi
 
-RPM="$OUT/bedrock-on-linux-${VER}-1.x86_64.rpm"
+RPM="$OUT/minecraft-hub-${VER}-1.x86_64.rpm"
 if command -v rpmbuild >/dev/null; then
   rm -f -- "$RPM"
   if bash "$SRC/scripts/build-rpm.sh" >/dev/null && [[ -s "$RPM" ]]; then
@@ -158,7 +158,7 @@ fi
 # The zipapp needs host Python 3; GUI and login dependencies (PySide6-Essentials,
 # cryptography, …) can be installed on first use by bol/deps.py.
 STAGE="$OUT/pyz-stage"
-PYZ="$OUT/bedrock-on-linux-${VER}.pyz"
+PYZ="$OUT/minecraft-hub-${VER}.pyz"
 rm -rf "$STAGE"
 rm -f -- "$PYZ"
 mkdir -p "$STAGE"
@@ -212,7 +212,7 @@ echo "  ✓ dist/$(basename "$PYZ")"
 built_artifacts+=("$PYZ")
 verified_artifacts+=("$PYZ")
 
-APPIMAGE="$OUT/BedrockOnLinux-${VER}-x86_64.AppImage"
+APPIMAGE="$OUT/MinecraftHub-${VER}-x86_64.AppImage"
 # The .zsync sidecar carries the block checksums AppImageUpdate and friends use
 # to transfer only what changed (issue #191); it describes exactly these bytes,
 # so it is built, published and checksummed with the AppImage, never separately.
@@ -238,7 +238,7 @@ else
   required_failures+=("AppImage")
 fi
 
-FLATPAK="$OUT/BedrockOnLinux-${VER}-x86_64.flatpak"
+FLATPAK="$OUT/MinecraftHub-${VER}-x86_64.flatpak"
 rm -f -- "$FLATPAK"
 if command -v flatpak-builder >/dev/null \
     || { command -v flatpak >/dev/null \
@@ -285,9 +285,9 @@ echo "== Verifying embedded candidate metadata =="
 # attested releases and are not attached here, so their hashes go in a sidecar
 # inputs file instead of this one. The temp+rename sequence prevents an
 # interrupted hash pass leaving a plausible but incomplete checksum file.
-CHECKSUM="$OUT/BedrockOnLinux-${VER}-SHA256SUMS"
+CHECKSUM="$OUT/MinecraftHub-${VER}-SHA256SUMS"
 CHECKSUM_TMP="$CHECKSUM.tmp.$$"
-INPUTS_SUMS="$OUT/BedrockOnLinux-${VER}-inputs.sha256"
+INPUTS_SUMS="$OUT/MinecraftHub-${VER}-inputs.sha256"
 INPUTS_TMP="$INPUTS_SUMS.tmp.$$"
 rm -f -- "$CHECKSUM" "$CHECKSUM_TMP" "$INPUTS_SUMS" "$INPUTS_TMP"
 (

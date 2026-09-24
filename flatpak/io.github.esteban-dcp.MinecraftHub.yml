@@ -1,4 +1,4 @@
-# Flathub manifest for BedrockOnLinux.
+# Flathub manifest for Minecraft Hub for Linux.
 #
 # Two things make this more than a plain Python app:
 #   1. The GUI is PySide6 (Qt for Python), which the GNOME runtime does not
@@ -11,7 +11,7 @@
 #
 # Local test build: scripts/build-flatpak.sh (swaps the app source for the
 # working tree); add --release to build this manifest as published.
-app-id: io.github.wyze3306.BedrockOnLinux
+app-id: io.github.esteban-dcp.MinecraftHub
 # The GNOME runtime is used for one reason: it ships libwebkit2gtk-4.1, and
 # org.freedesktop.Platform ships no WebKitGTK at all. Minecraft is downloaded
 # from the Microsoft Store, xodus-cli opens that sign-in in a WebKitGTK
@@ -23,7 +23,7 @@ app-id: io.github.wyze3306.BedrockOnLinux
 runtime: org.gnome.Platform
 runtime-version: '51'
 sdk: org.gnome.Sdk
-command: bedrock-on-linux
+command: minecraft-hub
 
 finish-args:
   - --share=ipc
@@ -48,6 +48,8 @@ finish-args:
   - --allow=per-app-dev-shm
   # Read-only access to the pre-XDG location for one-time migration. Using the
   # xdg-data alias here would shadow the private XDG destination read-only.
+  # Legacy data dir from BedrockOnLinux 2.x, read-only for one-time
+  # migration on first launch of the new flatpak.
   - --filesystem=~/.local/share/bedrock-on-linux:ro
   # Discord Rich Presence: the client listens on a socket in the *host* runtime
   # directory, and the sandbox is given a runtime directory of its own, so
@@ -151,24 +153,27 @@ modules:
         url: https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl
         sha256: 4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
 
-  - name: bedrock-on-linux
+  - name: minecraft-hub
     buildsystem: simple
     build-commands:
+      - install -Dm755 minecraft-hub /app/bin/minecraft-hub
+      # Compatibility shim so existing shell history and Steam shortcuts
+      # that still call `bedrock-on-linux` keep working.
       - install -Dm755 bedrock-on-linux /app/bin/bedrock-on-linux
       # the implementation lives in the bol/ package next to <prefix>/lib
-      - mkdir -p /app/lib/bedrock-on-linux
-      - cp -r bol /app/lib/bedrock-on-linux/bol
-      - find /app/lib/bedrock-on-linux/bol -type d -name __pycache__ -prune -exec rm -rf '{}' +
-      - find /app/lib/bedrock-on-linux/bol -type f -name '*.pyc' -delete
-      - install -Dm644 LICENSE /app/share/licenses/io.github.wyze3306.BedrockOnLinux/bedrock-on-linux/LICENSE
-      - install -Dm644 data/icon.png /app/share/icons/hicolor/256x256/apps/io.github.wyze3306.BedrockOnLinux.png
-      - install -Dm644 flatpak/io.github.wyze3306.BedrockOnLinux.desktop /app/share/applications/io.github.wyze3306.BedrockOnLinux.desktop
-      - install -Dm644 flatpak/io.github.wyze3306.BedrockOnLinux.metainfo.xml /app/share/metainfo/io.github.wyze3306.BedrockOnLinux.metainfo.xml
+      - mkdir -p /app/lib/minecraft-hub
+      - cp -r bol /app/lib/minecraft-hub/bol
+      - find /app/lib/minecraft-hub/bol -type d -name __pycache__ -prune -exec rm -rf '{}' +
+      - find /app/lib/minecraft-hub/bol -type f -name '*.pyc' -delete
+      - install -Dm644 LICENSE /app/share/licenses/io.github.esteban-dcp.MinecraftHub/minecraft-hub/LICENSE
+      - install -Dm644 data/icon.png /app/share/icons/hicolor/256x256/apps/io.github.esteban-dcp.MinecraftHub.png
+      - install -Dm644 flatpak/io.github.esteban-dcp.MinecraftHub.desktop /app/share/applications/io.github.esteban-dcp.MinecraftHub.desktop
+      - install -Dm644 flatpak/io.github.esteban-dcp.MinecraftHub.metainfo.xml /app/share/metainfo/io.github.esteban-dcp.MinecraftHub.metainfo.xml
     sources:
       # Pinned release. Bump tag+commit each release:
       #   git rev-parse vX.Y.Z^{commit}
       - type: git
-        url: https://github.com/Wyze3306/BedrockOnLinux.git
+        url: https://github.com/esteban-dcp/minecraft-hub-linux.git
         tag: v2.2.7
         commit: d27d7b25b702939146b1e96cf2a0d1795d41b87d
         x-checker-data:

@@ -22,7 +22,7 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
         # The Tcl/Tk graft is gone; the bundle is now the PySide6-Essentials
         # wheel closure, dropped in by pip rather than compiled + rpath-fixed.
         self.assertIn('rm -f "$DYN"/_tkinter.*.so', script)
-        self.assertIn("usr/share/licenses/bedrock-on-linux/LICENSE", script)
+        self.assertIn("usr/share/licenses/minecraft-hub/LICENSE", script)
         self.assertIn("cat > \"$APPDIR/AppRun\" <<'EOF'\n#!/bin/sh\n", script)
         self.assertIn('/bin/sh -n "$APPDIR/AppRun"', script)
         self.assertIn('rm -f "$DYN"/_crypt.*.so', script)
@@ -56,7 +56,7 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
         # A real QApplication construction, gated on DISPLAY like the Tk
         # check it replaced, proves the xcb platform plugin actually loads.
         self.assertIn("from PySide6.QtWidgets import QApplication", script)
-        self.assertIn('app = QApplication(["bedrock-on-linux-appimage-verify"])',
+        self.assertIn('app = QApplication(["minecraft-hub-appimage-verify"])',
                       script)
         self.assertNotIn("customtkinter", script)
         # tkinter itself is still mentioned, but only where the script drops
@@ -72,7 +72,7 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
             encoding="utf-8")
         self.assertIn(
             "gh-releases-zsync|${SELF_REPO%/*}|${SELF_REPO#*/}|${UPDATE_TAG}"
-            "|BedrockOnLinux-*-x86_64.AppImage.zsync", script)
+            "|MinecraftHub-*-x86_64.AppImage.zsync", script)
         # The repository is the one the launcher's own updater asks, so a fork
         # points at its own releases rather than at this one.
         self.assertIn("grep -m1 '^WINEGDK_PREBUILT_REPO = '", script)
@@ -118,7 +118,7 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
             self.assertIn(requirement, reqs)
         self.assertIn("--hash=sha256:", reqs)
         self.assertNotIn('*.dist-info', script)
-        self.assertIn("usr/share/doc/bedrock-on-linux/copyright", script)
+        self.assertIn("usr/share/doc/minecraft-hub/copyright", script)
         self.assertIn("-iname 'LICENSE*'", script)
         self.assertIn("-name '.DS_Store' -delete", script)
         self.assertIn("-type d -exec chmod 0755", script)
@@ -141,7 +141,7 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
         self.assertIn('SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1782250551}"',
                       script)
         self.assertIn('touch -h -d "@$SOURCE_DATE_EPOCH"', script)
-        self.assertIn("usr/share/licenses/bedrock-on-linux/LICENSE", script)
+        self.assertIn("usr/share/licenses/minecraft-hub/LICENSE", script)
         # Generated requires would be satisfied by nothing on the target
         # distributions, so the spec declares every dependency by hand.
         self.assertIn("AutoReqProv:    no", script)
@@ -167,7 +167,7 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
             encoding="utf-8")
         self.assertIn("dpkg-dev rpm ", workflow)
         # Uploaded to the publish job, attested, and attached to the release.
-        self.assertEqual(workflow.count("dist/bedrock-on-linux-*.rpm"), 3)
+        self.assertEqual(workflow.count("dist/minecraft-hub-*.rpm"), 3)
 
     def test_zipapp_embeds_license_and_bootstrap_pins_gui_stack(self):
         script = (ROOT / "scripts/build-release.sh").read_text(
@@ -190,18 +190,18 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
         )
 
     def test_flatpak_installs_project_license(self):
-        manifest = (ROOT / "flatpak/io.github.wyze3306.BedrockOnLinux.yml").read_text(
+        manifest = (ROOT / "flatpak/io.github.esteban-dcp.MinecraftHub.yml").read_text(
             encoding="utf-8")
         # Flathub wants every module's licence under share/licenses/$FLATPAK_ID.
         self.assertIn(
             "install -Dm644 LICENSE /app/share/licenses/"
-            "io.github.wyze3306.BedrockOnLinux/bedrock-on-linux/LICENSE",
+            "io.github.esteban-dcp.MinecraftHub/minecraft-hub/LICENSE",
             manifest,
         )
 
     def test_flatpak_installs_pyside6_with_its_own_python(self):
         manifest = (
-            ROOT / "flatpak/io.github.wyze3306.BedrockOnLinux.yml"
+            ROOT / "flatpak/io.github.esteban-dcp.MinecraftHub.yml"
         ).read_text(encoding="utf-8")
         self.assertIn("name: python3-dependencies", manifest)
         self.assertIn("--no-index --find-links=", manifest)
@@ -223,7 +223,7 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
 
     def test_flatpak_game_container_uses_the_portal_not_the_flatpak_service(self):
         manifest = (
-            ROOT / "flatpak/io.github.wyze3306.BedrockOnLinux.yml"
+            ROOT / "flatpak/io.github.esteban-dcp.MinecraftHub.yml"
         ).read_text(encoding="utf-8")
         # pressure-vessel asks org.freedesktop.portal.Flatpak for its
         # sub-sandbox; the Flatpak service itself is a sandbox escape (#157).
@@ -235,7 +235,7 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
 
     def test_release_flatpak_build_can_strip_like_flathub(self):
         manifest = (
-            ROOT / "flatpak/io.github.wyze3306.BedrockOnLinux.yml"
+            ROOT / "flatpak/io.github.esteban-dcp.MinecraftHub.yml"
         ).read_text(encoding="utf-8")
         workflow = (ROOT / ".github/workflows/build-app.yml").read_text(
             encoding="utf-8")
@@ -246,7 +246,7 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
 
     def test_flatpak_keeps_game_controller_device_access(self):
         manifest = (
-            ROOT / "flatpak/io.github.wyze3306.BedrockOnLinux.yml"
+            ROOT / "flatpak/io.github.esteban-dcp.MinecraftHub.yml"
         ).read_text(encoding="utf-8")
         self.assertIn("- --device=all\n", manifest)
 
@@ -275,22 +275,22 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
 
     def test_desktop_entries_launch_gui_and_match_window_class(self):
         for relative in (
-                "data/bedrock-on-linux.desktop",
-                "flatpak/io.github.wyze3306.BedrockOnLinux.desktop"):
+                "data/minecraft-hub.desktop",
+                "flatpak/io.github.esteban-dcp.MinecraftHub.desktop"):
             entry = (ROOT / relative).read_text(encoding="utf-8")
             self.assertIn("Type=Application\n", entry)
-            self.assertIn("Exec=bedrock-on-linux gui\n", entry)
+            self.assertIn("Exec=minecraft-hub gui\n", entry)
             self.assertIn("Terminal=false\n", entry)
-            self.assertIn("StartupWMClass=BedrockOnLinux\n", entry)
+            self.assertIn("StartupWMClass=Minecraft Hub for Linux\n", entry)
 
     def test_desktop_entries_offer_a_launcher_free_play_action(self):
         for relative in (
-                "data/bedrock-on-linux.desktop",
-                "flatpak/io.github.wyze3306.BedrockOnLinux.desktop"):
+                "data/minecraft-hub.desktop",
+                "flatpak/io.github.esteban-dcp.MinecraftHub.desktop"):
             entry = (ROOT / relative).read_text(encoding="utf-8")
             self.assertIn("Actions=Play;\n", entry)
             self.assertIn("[Desktop Action Play]\n", entry)
-            self.assertIn("Exec=bedrock-on-linux play\n", entry)
+            self.assertIn("Exec=minecraft-hub play\n", entry)
             # The action group must follow the main group it belongs to.
             self.assertLess(entry.index("[Desktop Entry]"),
                             entry.index("[Desktop Action Play]"))
@@ -300,12 +300,12 @@ class ApplicationPackagingPolicyTests(unittest.TestCase):
         # the Play action back into the launcher window.
         installer = (ROOT / "scripts/install.sh").read_text(encoding="utf-8")
         self.assertIn(
-            'sed "s|^Exec=bedrock-on-linux |Exec=$BIN/bedrock-on-linux |"',
+            'sed "s|^Exec=minecraft-hub |Exec=$BIN/minecraft-hub |"',
             installer)
         appimage = (ROOT / "scripts/build-appimage.sh").read_text(
             encoding="utf-8")
         self.assertIn(
-            "sed '0,/^Exec=/s|^Exec=.*|Exec=bedrock-on-linux gui|'", appimage)
+            "sed '0,/^Exec=/s|^Exec=.*|Exec=minecraft-hub gui|'", appimage)
 
 
 # Every hard DT_NEEDED of the bundled Qt xcb platform plugin that the host has

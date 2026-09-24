@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased — fork rebrand
+
+### Changed
+
+- **Renamed to Minecraft Hub for Linux.** BedrockOnLinux 2.x lives on as a
+  brand; this fork is the multi-game successor that aims to install and run
+  Minecraft Bedrock, Dungeons and Legends through one launcher. The user-facing
+  identity changes throughout: the `minecraft-hub` binary, the
+  `io.github.esteban-dcp.MinecraftHub` Flatpak, the `Minecraft Hub for Linux`
+  desktop entry, and a `https://github.com/esteban-dcp/minecraft-hub-linux`
+  homepage. Existing users keep their data: the launcher still recognises
+  `~/.local/share/bedrock-on-linux` and the `io.github.wyze3306.BedrockOnLinux`
+  Flatpak install, and migrates them on first launch. The `bedrock-on-linux`
+  binary remains as a thin shim that forwards to `minecraft-hub`, so shell
+  history and Steam shortcuts from 2.x keep working.
+- **Multi-family product registry.** `MC_PRODUCTS` is now a derived view of
+  `PRODUCTS`, a tuple that carries every Microsoft Store product the hub can
+  install via xodus-cli, each with `family` (`minecraft-bedrock` today,
+  `minecraft-dungeons` / `minecraft-legends` / `minecraft-java` to come),
+  `kind`, and a `launcher` tag. `xodus.product(id, family=None)` and
+  `xodus.list_products(family=None)` are the new accessors; the existing
+  `xodus.edition()` / `xodus.list_editions()` keep their signatures for the
+  Bedrock family.
+
 ## 2.2.7 — 2026-09-17
 
 ### Fixed

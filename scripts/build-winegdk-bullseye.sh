@@ -105,7 +105,7 @@ Usage: $(basename -- "$0") WORK_ROOT WINEGDK_SOURCE_REPO
 
 Builds commit $EXPECTED_COMMIT in a Bullseye user-namespace chroot and writes
 only below WORK_ROOT. WORK_ROOT must be empty and must not be inside either
-the BedrockOnLinux or WineGDK repository.
+the Minecraft Hub for Linux or WineGDK repository.
 EOF
   exit "${1:-2}"
 }
@@ -474,7 +474,7 @@ WORK_ROOT="$(realpath -- "$1")"
 
 [[ "$WORK_ROOT" != / ]] || die "refusing WORK_ROOT=/"
 path_is_within "$WORK_ROOT" "$PROJECT_ROOT" &&
-  die "WORK_ROOT must be outside the BedrockOnLinux repository"
+  die "WORK_ROOT must be outside the Minecraft Hub for Linux repository"
 path_is_within "$WORK_ROOT" "$SOURCE_REPO" &&
   die "WORK_ROOT must be outside the WineGDK source repository"
 

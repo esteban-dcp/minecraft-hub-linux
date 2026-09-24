@@ -26,7 +26,7 @@ Usage:
   tools/achievements-probe.py [--data DIR] [--title-id ID] [--scid SCID]
 
 DIR defaults to the launcher's data directory ($XDG_DATA_HOME or
-~/.local/share, or ~/.var/app/io.github.wyze3306.BedrockOnLinux/data under the
+~/.local/share, or ~/.var/app/io.github.esteban-dcp.MinecraftHub/data under the
 Flatpak). The title id and service config id default to the values in the
 packaged game's MicrosoftGame.Config.
 """
@@ -42,16 +42,16 @@ from pathlib import Path
 DEFAULT_TITLE_ID = 0x35760C07
 DEFAULT_SCID = "4fc10100-5f7a-4470-899b-280835760c07"
 HOST = "https://achievements.xboxlive.com"
-FLATPAK_DATA = ".var/app/io.github.wyze3306.BedrockOnLinux/data"
+FLATPAK_DATA = ".var/app/io.github.esteban-dcp.MinecraftHub/data"
 
 
 def data_dir():
     """Where the launcher keeps winegdk-preauth/device.json."""
-    flatpak = Path.home() / FLATPAK_DATA / "bedrock-on-linux"
+    flatpak = Path.home() / FLATPAK_DATA / "minecraft-hub"
     if (flatpak / "winegdk-preauth" / "device.json").is_file():
         return flatpak
     xdg = os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local/share")
-    return Path(xdg) / "bedrock-on-linux"
+    return Path(xdg) / "minecraft-hub"
 
 
 def request(token, uhs, method, url, body=None):

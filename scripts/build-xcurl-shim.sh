@@ -14,7 +14,7 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT_DIR="${1:-$HOME/.local/share/bedrock-on-linux/xodus-xcurl/openssl-set}"
+OUT_DIR="${1:-$HOME/.local/share/minecraft-hub/xodus-xcurl/openssl-set}"
 CC="${CC:-x86_64-w64-mingw32-gcc}"
 
 command -v "$CC" >/dev/null || { echo "need $CC (mingw-w64)" >&2; exit 1; }

@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+"""Locate the bundled ``bol`` package and run its CLI.
+
+This is the canonical entry point of Minecraft Hub for Linux, the multi-game
+launcher that supersedes BedrockOnLinux. The legacy ``bedrock-on-linux`` script
+ships alongside this one as a thin shim for users who still type the old name.
+"""
+import os
+import sys
+
+_here = os.path.dirname(os.path.realpath(__file__))
+for _cand in (_here,
+              os.path.join(os.path.dirname(_here), "lib", "minecraft-hub")):
+    if os.path.isdir(os.path.join(_cand, "bol")):
+        sys.path.insert(0, _cand)
+        break
+
+try:
+    from bol.cli import main
+except ModuleNotFoundError:
+    sys.exit("Minecraft Hub for Linux: the 'bol' package is missing — reinstall the app "
+             "(https://github.com/esteban-dcp/minecraft-hub-linux).")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print()
+        sys.exit(130)

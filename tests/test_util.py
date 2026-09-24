@@ -112,7 +112,7 @@ class LauncherCommandTests(unittest.TestCase):
         info.write_text("[Application]\n", encoding="utf-8")
         self.assertEqual(
             self.command("doctor", environ={}, info_path=info),
-            "flatpak run io.github.wyze3306.BedrockOnLinux doctor",
+            "flatpak run io.github.esteban-dcp.MinecraftHub doctor",
         )
 
     def test_appimage_uses_its_persistent_file_not_the_temporary_mount(self):
@@ -133,7 +133,7 @@ class LauncherCommandTests(unittest.TestCase):
                 "doctor", environ={},
                 which=lambda name: f"/usr/bin/{name}",
             ),
-            "bedrock-on-linux doctor",
+            "minecraft-hub doctor",
         )
 
     def test_portable_zipapp_uses_its_own_path(self):
@@ -149,7 +149,7 @@ class LauncherCommandTests(unittest.TestCase):
         module.write_text("", encoding="utf-8")
         self.assertEqual(
             self.command("doctor", environ={}, argv=[str(module)]),
-            "bedrock-on-linux doctor",
+            "minecraft-hub doctor",
         )
 
     def test_paths_with_spaces_stay_a_single_argument(self):

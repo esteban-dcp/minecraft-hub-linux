@@ -4,11 +4,17 @@
 import os
 from pathlib import Path
 
-APP = "bedrock-on-linux"
-PRETTY = "BedrockOnLinux"
+APP = "minecraft-hub"
+PRETTY = "Minecraft Hub for Linux"
 VERSION = "2.2.7"
 # Published Flatpak identity; used to print a runnable command for that layout.
-FLATPAK_APP_ID = "io.github.wyze3306.BedrockOnLinux"
+FLATPAK_APP_ID = "io.github.esteban-dcp.MinecraftHub"
+# Hardcoded on purpose: legacy data dirs and pointer files keep the old name
+# from BedrockOnLinux 2.x installs no matter what APP is now. Changing APP
+# must not move the reference, or the migration stops finding the installs it
+# is supposed to move.
+LEGACY_APP_NAME = "bedrock-on-linux"
+LEGACY_FLATPAK_APP_ID = "io.github.wyze3306.BedrockOnLinux"
 
 HOME = Path.home()
 XDG_DATA_HOME = Path(
@@ -18,12 +24,12 @@ XDG_CONFIG_HOME = Path(
     os.environ.get("XDG_CONFIG_HOME") or HOME / ".config"
 ).expanduser()
 DEFAULT_DATA = XDG_DATA_HOME / APP
-LEGACY_DATA = HOME / ".local" / "share" / APP
+LEGACY_DATA = HOME / ".local" / "share" / LEGACY_APP_NAME
 
 # Resolve relocation before exporting DATA; imported path constants cannot be
 # changed afterwards. BOL_HOME takes priority over the persistent pointer.
 INSTALL_LOCATION_FILE = XDG_CONFIG_HOME / APP / "install_location"
-LEGACY_INSTALL_LOCATION_FILE = HOME / ".config" / APP / "install_location"
+LEGACY_INSTALL_LOCATION_FILE = HOME / ".config" / LEGACY_APP_NAME / "install_location"
 
 _bol_home = os.environ.get("BOL_HOME", "").strip()
 if _bol_home:
@@ -116,11 +122,11 @@ WINEGDK_ARCHIVE_SHA256 = "e0ead91c3003ff6d4e01995dc8590d21603251d2e71a51c594eab0
 # Build workflows verify this deterministic intermediate before reusing it.
 WINEGDK_PREFIX_SHA256 = "5e790543d13a42b594df03dc9adfad16980cfd471ed8f1cfcbc55718e1791e25"
 
-SELF_REPO = WINEGDK_PREBUILT_REPO
+SELF_REPO = "esteban-dcp/minecraft-hub-linux"
 
 # Where the launcher points people who ask where it came from -- the two
 # links Discord shows under a play session, and the ones printed elsewhere.
-SITE_URL = "https://wyze3306.github.io/BedrockOnLinux/"
+SITE_URL = "https://github.com/esteban-dcp/minecraft-hub-linux"
 DISCORD_INVITE = "https://discord.gg/5YJq54Yhbu"
 
 # Discord Rich Presence. Discord names the *application* in "Playing ...", so
@@ -231,7 +237,10 @@ MC_PRODUCTS = tuple(entry for entry in PRODUCTS
 
 
 def _legacy_install_location_file() -> Path:
-    return HOME / ".config" / APP / "install_location"
+    # Uses LEGACY_APP_NAME, not APP, so the legacy pointer is always
+    # ~/.config/bedrock-on-linux/install_location regardless of what the app
+    # is called today. Renaming APP must not move this reference.
+    return HOME / ".config" / LEGACY_APP_NAME / "install_location"
 
 
 def get_install_location() -> str:

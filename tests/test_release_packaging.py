@@ -42,14 +42,17 @@ _PLACEHOLDER_ENGINE_SHA = "ee" * 32
 _ENGINE_SHA = WINEGDK_ARCHIVE_SHA256 or _PLACEHOLDER_ENGINE_SHA
 
 
-def _config(version=VERSION, rev=WINEGDK_BUILD_REV,
-            source_commit=WINEGDK_SOURCE_COMMIT,
-            archive_sha=_ENGINE_SHA,
-            xcurl_rev=OPENSSL_XCURL_REV,
-            xcurl_sha=OPENSSL_XCURL_ARCHIVE_SHA256,
-            umu_version=UMU_VERSION,
-            umu_archive_sha=UMU_ARCHIVE_SHA256,
-            umu_run_sha=UMU_RUN_SHA256):
+def _config(
+    version=VERSION,
+    rev=WINEGDK_BUILD_REV,
+    source_commit=WINEGDK_SOURCE_COMMIT,
+    archive_sha=_ENGINE_SHA,
+    xcurl_rev=OPENSSL_XCURL_REV,
+    xcurl_sha=OPENSSL_XCURL_ARCHIVE_SHA256,
+    umu_version=UMU_VERSION,
+    umu_archive_sha=UMU_ARCHIVE_SHA256,
+    umu_run_sha=UMU_RUN_SHA256,
+):
     return (
         f'VERSION = "{version}"\n'
         f'WINEGDK_BUILD_REV = "{rev}"\n'
@@ -85,7 +88,8 @@ def _payload_bytes(source, relative):
     if relative == "bol/config.py" and not WINEGDK_ARCHIVE_SHA256:
         data = data.replace(
             b'WINEGDK_ARCHIVE_SHA256 = ""',
-            b'WINEGDK_ARCHIVE_SHA256 = "%s"' % _PLACEHOLDER_ENGINE_SHA.encode())
+            b'WINEGDK_ARCHIVE_SHA256 = "%s"' % _PLACEHOLDER_ENGINE_SHA.encode(),
+        )
     return data
 
 
@@ -121,16 +125,14 @@ class CandidateMetadataTests(unittest.TestCase):
         (staged / "scripts").mkdir(parents=True)
         shutil.copy2(VERIFY, staged / "scripts" / VERIFY.name)
         (staged / "data").mkdir(parents=True)
-        for relative in ("LICENSE", "data/icon.png",
-                         "data/bedrock-on-linux.desktop"):
+        for relative in ("LICENSE", "data/icon.png", "data/minecraft-hub.desktop"):
             shutil.copy2(ROOT / relative, staged / relative)
         return staged
 
     def _run(self, *artifacts):
         staged = self._staged_checkout()
         return subprocess.run(
-            [str(staged / "scripts" / VERIFY.name),
-             *(str(path) for path in artifacts)],
+            [str(staged / "scripts" / VERIFY.name), *(str(path) for path in artifacts)],
             cwd=staged,
             text=True,
             stdout=subprocess.PIPE,
@@ -138,9 +140,16 @@ class CandidateMetadataTests(unittest.TestCase):
             check=False,
         )
 
-    def _pyz(self, name="candidate.pyz", version=VERSION,
-             rev=WINEGDK_BUILD_REV, *, missing=(), replacements=None,
-             extras=None):
+    def _pyz(
+        self,
+        name="candidate.pyz",
+        version=VERSION,
+        rev=WINEGDK_BUILD_REV,
+        *,
+        missing=(),
+        replacements=None,
+        extras=None,
+    ):
         path = self.base / name
         missing = set(missing)
         replacements = replacements or {}
@@ -149,8 +158,9 @@ class CandidateMetadataTests(unittest.TestCase):
             for source, relative in _bol_regular_files():
                 if relative in missing:
                     continue
-                if relative == "bol/config.py" \
-                        and (version != VERSION or rev != WINEGDK_BUILD_REV):
+                if relative == "bol/config.py" and (
+                    version != VERSION or rev != WINEGDK_BUILD_REV
+                ):
                     archive.writestr(relative, _config(version, rev))
                 elif relative in replacements:
                     archive.writestr(relative, replacements[relative])
@@ -163,10 +173,10 @@ class CandidateMetadataTests(unittest.TestCase):
         path.chmod(0o755)
         return path
 
-    def _appimage(self, name="candidate.AppImage", version=VERSION,
-                  rev=WINEGDK_BUILD_REV):
-        if shutil.which("mksquashfs") is None \
-                or shutil.which("unsquashfs") is None:
+    def _appimage(
+        self, name="candidate.AppImage", version=VERSION, rev=WINEGDK_BUILD_REV
+    ):
+        if shutil.which("mksquashfs") is None or shutil.which("unsquashfs") is None:
             self.skipTest("squashfs-tools not installed")
         # A tiny non-executable runtime prefix plus a real SquashFS exercises
         # the verifier's safe, read-only AppImage inspection path.
@@ -175,18 +185,18 @@ class CandidateMetadataTests(unittest.TestCase):
         bol_root = root / "usr/bin/bol"
         _copy_bol_payload(bol_root)
         config = bol_root / "config.py"
-        license_path = root / "usr/share/licenses/bedrock-on-linux/LICENSE"
+        license_path = root / "usr/share/licenses/minecraft-hub/LICENSE"
         license_path.parent.mkdir(parents=True)
         if version != VERSION or rev != WINEGDK_BUILD_REV:
             config.write_text(_config(version, rev), encoding="utf-8")
         shutil.copy2(ROOT / "LICENSE", license_path)
-        desktop = root / "bedrock-on-linux.desktop"
-        shutil.copy2(ROOT / "data/bedrock-on-linux.desktop", desktop)
-        shared_desktop = root / "usr/share/applications/bedrock-on-linux.desktop"
+        desktop = root / "minecraft-hub.desktop"
+        shutil.copy2(ROOT / "data/minecraft-hub.desktop", desktop)
+        shared_desktop = root / "usr/share/applications/minecraft-hub.desktop"
         shared_desktop.parent.mkdir(parents=True)
         shutil.copy2(desktop, shared_desktop)
-        shutil.copy2(ROOT / "data/icon.png", root / "bedrock-on-linux.png")
-        launcher = root / "usr/bin/bedrock-on-linux"
+        shutil.copy2(ROOT / "data/icon.png", root / "minecraft-hub.png")
+        launcher = root / "usr/bin/minecraft-hub"
         launcher.parent.mkdir(parents=True, exist_ok=True)
         launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
         launcher.chmod(0o755)
@@ -195,8 +205,16 @@ class CandidateMetadataTests(unittest.TestCase):
         app_run.chmod(0o755)
         squashfs = self.base / (name + ".squashfs")
         subprocess.run(
-            ["mksquashfs", str(root), str(squashfs), "-noappend",
-             "-all-root", "-processors", "1", "-quiet"],
+            [
+                "mksquashfs",
+                str(root),
+                str(squashfs),
+                "-noappend",
+                "-all-root",
+                "-processors",
+                "1",
+                "-quiet",
+            ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             check=True,
@@ -205,23 +223,22 @@ class CandidateMetadataTests(unittest.TestCase):
         path.chmod(0o755)
         return path
 
-    def _deb(self, architecture="amd64", version=VERSION,
-             rev=WINEGDK_BUILD_REV):
+    def _deb(self, architecture="amd64", version=VERSION, rev=WINEGDK_BUILD_REV):
         if shutil.which("dpkg-deb") is None:
             self.skipTest("dpkg-deb not installed")
         root = self.base / ("deb-root-" + architecture)
         control = root / "DEBIAN/control"
-        bol_root = root / "usr/lib/bedrock-on-linux/bol"
+        bol_root = root / "usr/lib/minecraft-hub/bol"
         _copy_bol_payload(bol_root)
         config = bol_root / "config.py"
         control.parent.mkdir(parents=True)
-        copyright_file = root / "usr/share/doc/bedrock-on-linux/copyright"
+        copyright_file = root / "usr/share/doc/minecraft-hub/copyright"
         copyright_file.parent.mkdir(parents=True)
         desktop = root / "usr/share/applications/bedrock-on-linux.desktop"
         desktop.parent.mkdir(parents=True)
-        icon = root / "usr/share/icons/hicolor/256x256/apps/bedrock-on-linux.png"
+        icon = root / "usr/share/icons/hicolor/256x256/apps/minecraft-hub.png"
         icon.parent.mkdir(parents=True)
-        launcher = root / "usr/lib/bedrock-on-linux/bedrock-on-linux"
+        launcher = root / "usr/lib/minecraft-hub/minecraft-hub"
         launcher.parent.mkdir(parents=True, exist_ok=True)
         control.write_text(
             "Package: bedrock-on-linux-test\n"
@@ -240,19 +257,22 @@ class CandidateMetadataTests(unittest.TestCase):
         launcher.chmod(0o755)
         package = self.base / f"candidate-{architecture}.deb"
         subprocess.run(
-            ["dpkg-deb", "--build", "--root-owner-group", str(root),
-             str(package)],
+            ["dpkg-deb", "--build", "--root-owner-group", str(root), str(package)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             check=True,
         )
         return package
 
-    def _rpm(self, architecture="x86_64", version=VERSION,
-             rev=WINEGDK_BUILD_REV, requires=()):
-        if shutil.which("rpmbuild") is None or shutil.which("rpm") is None \
-                or shutil.which("rpm2cpio") is None \
-                or shutil.which("cpio") is None:
+    def _rpm(
+        self, architecture="x86_64", version=VERSION, rev=WINEGDK_BUILD_REV, requires=()
+    ):
+        if (
+            shutil.which("rpmbuild") is None
+            or shutil.which("rpm") is None
+            or shutil.which("rpm2cpio") is None
+            or shutil.which("cpio") is None
+        ):
             self.skipTest("rpm tooling not installed")
         root = self.base / ("rpm-root-" + architecture)
         top = self.base / ("rpm-top-" + architecture)
@@ -286,8 +306,8 @@ class CandidateMetadataTests(unittest.TestCase):
             "Summary: packaging verifier fixture\n"
             "License: MIT\n"
             "AutoReqProv: no\n"
-            + "".join(f"Requires: {item}\n" for item in requires) +
-            "%description\nfixture\n%files\n"
+            + "".join(f"Requires: {item}\n" for item in requires)
+            + "%description\nfixture\n%files\n"
             "/usr/lib/bedrock-on-linux\n"
             "/usr/share/applications/bedrock-on-linux.desktop\n"
             "/usr/share/icons/hicolor/256x256/apps/bedrock-on-linux.png\n"
@@ -296,9 +316,17 @@ class CandidateMetadataTests(unittest.TestCase):
             encoding="utf-8",
         )
         subprocess.run(
-            ["rpmbuild", "-bb", "--target", architecture,
-             "--define", f"_topdir {top}", "--buildroot", str(root),
-             str(spec)],
+            [
+                "rpmbuild",
+                "-bb",
+                "--target",
+                architecture,
+                "--define",
+                f"_topdir {top}",
+                "--buildroot",
+                str(root),
+                str(spec),
+            ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             check=True,
@@ -322,21 +350,31 @@ class CandidateMetadataTests(unittest.TestCase):
         config = staged / "bol/config.py"
         original = config.read_text(encoding="utf-8")
         config.write_text(
-            re.sub(r'^WINEGDK_ARCHIVE_SHA256 = ".*"$',
-                   'WINEGDK_ARCHIVE_SHA256 = ""',
-                   original, count=1, flags=re.MULTILINE),
-            encoding="utf-8")
+            re.sub(
+                r'^WINEGDK_ARCHIVE_SHA256 = ".*"$',
+                'WINEGDK_ARCHIVE_SHA256 = ""',
+                original,
+                count=1,
+                flags=re.MULTILINE,
+            ),
+            encoding="utf-8",
+        )
         try:
             result = subprocess.run(
                 [str(staged / "scripts" / VERIFY.name), str(self._pyz())],
-                cwd=staged, text=True, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, check=False)
+                cwd=staged,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
         finally:
             config.write_text(original, encoding="utf-8")
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("WINEGDK_ARCHIVE_SHA256 is not a lowercase SHA-256 pin",
-                      result.stderr)
+        self.assertIn(
+            "WINEGDK_ARCHIVE_SHA256 is not a lowercase SHA-256 pin", result.stderr
+        )
 
     def test_rejects_stale_engine_revision_inside_versioned_pyz(self):
         artifact = self._pyz(
@@ -345,8 +383,7 @@ class CandidateMetadataTests(unittest.TestCase):
         )
         result = self._run(artifact)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("embeds WINEGDK_BUILD_REV=wow64-archs-stale",
-                      result.stderr)
+        self.assertIn("embeds WINEGDK_BUILD_REV=wow64-archs-stale", result.stderr)
 
     def test_rejects_debian_architecture_all(self):
         result = self._run(self._deb(architecture="all"))
@@ -377,8 +414,7 @@ class CandidateMetadataTests(unittest.TestCase):
         artifact = self._rpm(rev="wow64-archs-stale")
         result = self._run(artifact)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("embeds WINEGDK_BUILD_REV=wow64-archs-stale",
-                      result.stderr)
+        self.assertIn("embeds WINEGDK_BUILD_REV=wow64-archs-stale", result.stderr)
 
     def test_rejects_missing_bol_payload_file(self):
         result = self._run(self._pyz(missing={"bol/gpu_safety.py"}))
@@ -386,24 +422,36 @@ class CandidateMetadataTests(unittest.TestCase):
         self.assertIn("missing: gpu_safety.py", result.stderr)
 
     def test_rejects_stale_bol_payload_file(self):
-        result = self._run(self._pyz(replacements={
-            "bol/wine_registry.py": b"# stale registry implementation\n",
-        }))
+        result = self._run(
+            self._pyz(
+                replacements={
+                    "bol/wine_registry.py": b"# stale registry implementation\n",
+                }
+            )
+        )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("stale: wine_registry.py", result.stderr)
 
     def test_rejects_extra_bol_payload_file(self):
-        result = self._run(self._pyz(extras={
-            "bol/obsolete_release_helper.py": b"# obsolete\n",
-        }))
+        result = self._run(
+            self._pyz(
+                extras={
+                    "bol/obsolete_release_helper.py": b"# obsolete\n",
+                }
+            )
+        )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("extra: obsolete_release_helper.py", result.stderr)
 
     def test_ignores_runtime_bytecode_and_cache_files(self):
-        result = self._run(self._pyz(extras={
-            "bol/__pycache__/gpu_safety.cpython-312.pyc": b"cache",
-            "bol/leftover.pyc": b"cache",
-        }))
+        result = self._run(
+            self._pyz(
+                extras={
+                    "bol/__pycache__/gpu_safety.cpython-312.pyc": b"cache",
+                    "bol/leftover.pyc": b"cache",
+                }
+            )
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
 
 
@@ -428,13 +476,17 @@ class BuildReleaseHygieneTests(unittest.TestCase):
         build = script.index('bash "$SRC/scripts/build-flatpak.sh"', guard)
         self.assertIn("FLATPAK_ARGS=(--release)", script[guard:build])
         self.assertNotIn(
-            'build-flatpak.sh" --release', script,
-            "the Flatpak mode must follow the channel, not be hard-coded")
+            'build-flatpak.sh" --release',
+            script,
+            "the Flatpak mode must follow the channel, not be hard-coded",
+        )
 
         workflow = (ROOT / ".github/workflows/build-app.yml").read_text(
-            encoding="utf-8")
-        self.assertIn("BOL_RELEASE_CHANNEL: ${{ inputs.channel || 'release' }}",
-                      workflow)
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "BOL_RELEASE_CHANNEL: ${{ inputs.channel || 'release' }}", workflow
+        )
 
     def test_the_appimage_delta_sidecar_ships_with_the_appimage(self):
         # Issue #191: the .zsync holds block checksums of one exact AppImage.
@@ -450,12 +502,15 @@ class BuildReleaseHygieneTests(unittest.TestCase):
 
         # The AppImage glob does not match the sidecar; each list needs it.
         workflow = (ROOT / ".github/workflows/build-app.yml").read_text(
-            encoding="utf-8")
+            encoding="utf-8"
+        )
         self.assertEqual(
-            workflow.count("dist/BedrockOnLinux-*-x86_64.AppImage\n"),
-            workflow.count("dist/BedrockOnLinux-*-x86_64.AppImage.zsync\n"))
+            workflow.count("dist/MinecraftHub-*-x86_64.AppImage\n"),
+            workflow.count("dist/MinecraftHub-*-x86_64.AppImage.zsync\n"),
+        )
         self.assertEqual(
-            workflow.count("dist/BedrockOnLinux-*-x86_64.AppImage.zsync\n"), 3)
+            workflow.count("dist/BedrockOnLinux-*-x86_64.AppImage.zsync\n"), 3
+        )
 
     def test_stale_app_artifacts_are_removed_but_shared_assets_survive(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -473,39 +528,46 @@ class BuildReleaseHygieneTests(unittest.TestCase):
             shutil.copy2(VERIFY, scripts / VERIFY.name)
             (bol / "__init__.py").write_text("", encoding="utf-8")
             (checkout / "LICENSE").write_text(
-                "fixture project license\n", encoding="utf-8")
+                "fixture project license\n", encoding="utf-8"
+            )
             (data / "icon.png").write_bytes(b"fixture icon")
 
             engine = dist / f"GDK-Proton-xuser-{WINEGDK_BUILD_REV}.tar.gz"
             engine.write_bytes(b"reviewed engine fixture")
             engine_sha = hashlib.sha256(engine.read_bytes()).hexdigest()
             (engine.with_suffix(engine.suffix + ".sha256")).write_text(
-                f"{engine_sha}  {engine.name}\n", encoding="utf-8")
+                f"{engine_sha}  {engine.name}\n", encoding="utf-8"
+            )
             xcurl = dist / f"openssl-xcurl-set-{OPENSSL_XCURL_REV}.tar.gz"
             xcurl.write_bytes(b"reviewed xcurl fixture")
             xcurl_sha = hashlib.sha256(xcurl.read_bytes()).hexdigest()
             (bol / "config.py").write_text(
-                _config(archive_sha=engine_sha, xcurl_sha=xcurl_sha),
-                encoding="utf-8")
+                _config(archive_sha=engine_sha, xcurl_sha=xcurl_sha), encoding="utf-8"
+            )
 
             # Avoid network and heavyweight package construction.  These
             # failures must be handled as optional formats by build-release.sh.
-            for name in ("build-deb.sh", "build-rpm.sh", "build-appimage.sh",
-                         "build-flatpak.sh"):
+            for name in (
+                "build-deb.sh",
+                "build-rpm.sh",
+                "build-appimage.sh",
+                "build-flatpak.sh",
+            ):
                 (scripts / name).write_text(
-                    "#!/usr/bin/env bash\nexit 1\n", encoding="utf-8")
+                    "#!/usr/bin/env bash\nexit 1\n", encoding="utf-8"
+                )
 
             stale = (
-                dist / "BedrockOnLinux-x86_64.AppImage",
-                dist / f"BedrockOnLinux-{VERSION}-x86_64.AppImage",
-                dist / "BedrockOnLinux-1.2.9-x86_64.AppImage",
-                dist / "BedrockOnLinux-1.2.9-x86_64.AppImage.zsync",
-                dist / f"BedrockOnLinux-{VERSION}-x86_64.AppImage.zsync",
-                dist / "bedrock-on-linux-1.2.9.pyz",
-                dist / "bedrock-on-linux_1.2.9_all.deb",
-                dist / "bedrock-on-linux-1.2.9-1.x86_64.rpm",
-                dist / "BedrockOnLinux-1.2.9-SHA256SUMS",
-                dist / "BedrockOnLinux-1.2.9-portable.tar.gz",
+                dist / "MinecraftHub-x86_64.AppImage",
+                dist / f"MinecraftHub-{VERSION}-x86_64.AppImage",
+                dist / "MinecraftHub-1.2.9-x86_64.AppImage",
+                dist / "MinecraftHub-1.2.9-x86_64.AppImage.zsync",
+                dist / f"MinecraftHub-{VERSION}-x86_64.AppImage.zsync",
+                dist / "minecraft-hub-1.2.9.pyz",
+                dist / "minecraft-hub_1.2.9_all.deb",
+                dist / "minecraft-hub-1.2.9-1.x86_64.rpm",
+                dist / "MinecraftHub-1.2.9-SHA256SUMS",
+                dist / "MinecraftHub-1.2.9-portable.tar.gz",
             )
             for path in stale:
                 path.write_text("stale", encoding="utf-8")
@@ -539,12 +601,12 @@ class BuildReleaseHygieneTests(unittest.TestCase):
                 self.assertEqual(path.read_text(encoding="utf-8"), "keep")
             self.assertFalse(legacy_cache.exists())
 
-            current_pyz = dist / f"bedrock-on-linux-{VERSION}.pyz"
-            checksum = dist / f"BedrockOnLinux-{VERSION}-SHA256SUMS"
+            current_pyz = dist / f"minecraft-hub-{VERSION}.pyz"
+            checksum = dist / f"MinecraftHub-{VERSION}-SHA256SUMS"
             self.assertTrue(current_pyz.is_file())
             self.assertFalse(any(dist.glob("*.AppImage")))
             self.assertNotIn(
-                f"\u2713 dist/BedrockOnLinux-{VERSION}-x86_64.AppImage",
+                f"\u2713 dist/MinecraftHub-{VERSION}-x86_64.AppImage",
                 result.stdout,
             )
 
@@ -556,11 +618,10 @@ class BuildReleaseHygieneTests(unittest.TestCase):
             )
             # Engine + XCurl inputs (separately released, not attached) live in
             # a sidecar inputs checksum file, not the app SHA256SUMS.
-            inputs = dist / f"BedrockOnLinux-{VERSION}-inputs.sha256"
+            inputs = dist / f"MinecraftHub-{VERSION}-inputs.sha256"
             self.assertEqual(
                 inputs.read_text(encoding="utf-8"),
-                f"{engine_sha}  {engine.name}\n"
-                f"{xcurl_sha}  {xcurl.name}\n",
+                f"{engine_sha}  {engine.name}\n{xcurl_sha}  {xcurl.name}\n",
             )
 
             first_pyz = current_pyz.read_bytes()
@@ -584,14 +645,12 @@ class RunCandidateSafetyTests(unittest.TestCase):
         self.checkout = Path(self.tmpdir.name)
         (self.checkout / "scripts").mkdir()
         (self.checkout / "bol").mkdir()
-        shutil.copy2(RUN_CANDIDATE,
-                     self.checkout / "scripts/run-candidate.sh")
-        (self.checkout / "bol/__init__.py").write_text(
-            "", encoding="utf-8")
-        (self.checkout / "bol/config.py").write_text(
-            _config(), encoding="utf-8")
-        self.archive = self.checkout / "dist" / (
-            f"GDK-Proton-xuser-{WINEGDK_BUILD_REV}.tar.gz")
+        shutil.copy2(RUN_CANDIDATE, self.checkout / "scripts/run-candidate.sh")
+        (self.checkout / "bol/__init__.py").write_text("", encoding="utf-8")
+        (self.checkout / "bol/config.py").write_text(_config(), encoding="utf-8")
+        self.archive = (
+            self.checkout / "dist" / (f"GDK-Proton-xuser-{WINEGDK_BUILD_REV}.tar.gz")
+        )
         self.archive.parent.mkdir()
         self.archive.write_bytes(b"local candidate fixture")
         self.engine = self.checkout / "installed-engine"
@@ -625,10 +684,9 @@ class RunCandidateSafetyTests(unittest.TestCase):
             "    return SimpleNamespace(build_rev=actual)\n",
             encoding="utf-8",
         )
-        launcher = self.checkout / "bedrock-on-linux"
+        launcher = self.checkout / "minecraft-hub"
         launcher.write_text(
-            "#!/usr/bin/env bash\n"
-            "printf '%s\\n' \"$@\" > \"$TEST_LAUNCH_MARKER\"\n",
+            '#!/usr/bin/env bash\nprintf \'%s\\n\' "$@" > "$TEST_LAUNCH_MARKER"\n',
             encoding="utf-8",
         )
         launcher.chmod(0o755)
@@ -638,13 +696,15 @@ class RunCandidateSafetyTests(unittest.TestCase):
 
     def _run(self, *, accept, validate=True, manifest_rev=None):
         env = os.environ.copy()
-        env.update({
-            "TEST_ENGINE": str(self.engine),
-            "TEST_ACCEPT": "1" if accept else "0",
-            "TEST_VALIDATE": "1" if validate else "0",
-            "TEST_LAUNCH_MARKER": str(self.launch_marker),
-            "TEST_VALIDATION_MARKER": str(self.validation_marker),
-        })
+        env.update(
+            {
+                "TEST_ENGINE": str(self.engine),
+                "TEST_ACCEPT": "1" if accept else "0",
+                "TEST_VALIDATE": "1" if validate else "0",
+                "TEST_LAUNCH_MARKER": str(self.launch_marker),
+                "TEST_VALIDATION_MARKER": str(self.validation_marker),
+            }
+        )
         if manifest_rev is not None:
             env["TEST_MANIFEST_REV"] = manifest_rev
         return subprocess.run(
@@ -671,16 +731,14 @@ class RunCandidateSafetyTests(unittest.TestCase):
             self.validation_marker.read_text(encoding="utf-8"),
             WINEGDK_BUILD_REV,
         )
-        self.assertEqual(self.launch_marker.read_text(encoding="utf-8"),
-                         "gui\n")
+        self.assertEqual(self.launch_marker.read_text(encoding="utf-8"), "gui\n")
         self.assertIn(
             f"Installed game engine validated: {WINEGDK_BUILD_REV}",
             result.stdout,
         )
 
     def test_mislabeled_installed_manifest_prevents_launch(self):
-        result = self._run(
-            accept=True, manifest_rev="wow64-archs-r10")
+        result = self._run(accept=True, manifest_rev="wow64-archs-r10")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("installed candidate is wow64-archs-r10", result.stderr)
         self.assertFalse(self.launch_marker.exists())
@@ -713,8 +771,7 @@ class EnginePackagingComplianceTests(unittest.TestCase):
             self.assertIn(name, script)
         self.assertIn("licenses-and-provenance", script)
         self.assertIn('rm -rf "$STAGED_ENGINE/files/include"', script)
-        self.assertIn(
-            '"$WINEGDK_PROVENANCE_DEST/COPYING.LGPL-2.1"', script)
+        self.assertIn('"$WINEGDK_PROVENANCE_DEST/COPYING.LGPL-2.1"', script)
         self.assertIn("ARCHIVE_MEMBERS", script)
         self.assertIn("verify_winegdk_source_provenance", script)
         self.assertIn("native Xbox app configuration ready", script)
@@ -729,19 +786,22 @@ class EnginePackagingComplianceTests(unittest.TestCase):
 
     def test_package_requires_native_file_picker_in_both_architectures(self):
         script = PACKAGE_ENGINE.read_text(encoding="utf-8")
-        loop = script.index('for arch in "${ARCHES[@]}"; do',
-                            script.index("# The native engine must expose"))
+        loop = script.index(
+            'for arch in "${ARCHES[@]}"; do',
+            script.index("# The native engine must expose"),
+        )
         module = script.index(
             'storage="$STAGED_ENGINE/files/lib/wine/$arch/windows.storage.dll"',
             loop,
         )
         class_marker = script.index(
-            '"Microsoft.Windows.Storage.Pickers.FileOpenPicker"', module)
+            '"Microsoft.Windows.Storage.Pickers.FileOpenPicker"', module
+        )
         method_marker = script.index('"PickSingleFileAsync"', class_marker)
-        multi_method_marker = script.index(
-            '"PickMultipleFilesAsync"', method_marker)
+        multi_method_marker = script.index('"PickMultipleFilesAsync"', method_marker)
         registration = script.index(
-            'has_file_picker_registration "$storage"', method_marker)
+            'has_file_picker_registration "$storage"', method_marker
+        )
         loop_end = script.index("\ndone", registration)
         self.assertLess(loop, module)
         self.assertLess(module, class_marker)
@@ -751,17 +811,21 @@ class EnginePackagingComplianceTests(unittest.TestCase):
         self.assertLess(registration, loop_end)
 
         registration_helper = script[
-            script.index("has_file_picker_registration()"):
-            script.index("\n}\n", script.index(
-                "has_file_picker_registration()")) + 3]
+            script.index("has_file_picker_registration()") : script.index(
+                "\n}\n", script.index("has_file_picker_registration()")
+            )
+            + 3
+        ]
         self.assertIn("ForceRemove Microsoft", registration_helper)
         self.assertIn("'DllPath' = s '%MODULE%'", registration_helper)
 
     def test_memory_patch_import_guard_is_pipefail_safe(self):
         script = PACKAGE_ENGINE.read_text(encoding="utf-8")
-        guard = script[script.index('if objdump -p "$xgdk"'):
-                       script.index("\ndone", script.index(
-                           'if objdump -p "$xgdk"'))]
+        guard = script[
+            script.index('if objdump -p "$xgdk"') : script.index(
+                "\ndone", script.index('if objdump -p "$xgdk"')
+            )
+        ]
         self.assertIn('objdump -p "$xgdk" | grep -E', guard)
         self.assertNotIn("grep -Eq", guard)
         self.assertIn(">/dev/null", guard)

@@ -6,18 +6,18 @@
 # The launcher (ensure_openssl_xcurl_set) downloads the produced asset
 #   openssl-xcurl-set-<rev>.tar.gz
 # from the app's own GitHub releases and unpacks it into
-#   ~/.local/share/bedrock-on-linux/xodus-xcurl/openssl-set/
+#   ~/.local/share/minecraft-hub/xodus-xcurl/openssl-set/
 # where _install_openssl_xcurl() / _install_cryptbase_in_prefix() consume it.
 #
 # Usage:
 #   scripts/package-openssl-xcurl.sh [SET_DIR]
 # SET_DIR defaults to the maintainer's installed set. Prints the content rev to
-# paste into OPENSSL_XCURL_REV in bedrock-on-linux, and writes the tarball to
+# paste into OPENSSL_XCURL_REV in minecraft-hub, and writes the tarball to
 # dist/.
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SET_DIR="${1:-$HOME/.local/share/bedrock-on-linux/xodus-xcurl/openssl-set}"
+SET_DIR="${1:-$HOME/.local/share/minecraft-hub/xodus-xcurl/openssl-set}"
 OUT="$SRC/dist"
 mkdir -p "$OUT"
 
@@ -55,8 +55,8 @@ mv "$TMP_TAR" "$OUT/$ASSET"
 echo
 echo "  ✓ dist/$ASSET ($(du -sh "$OUT/$ASSET" | cut -f1))"
 echo
-echo "Set in bedrock-on-linux:"
+echo "Set in minecraft-hub:"
 echo "  OPENSSL_XCURL_REV = \"$REV\""
 echo
 echo "Publish on the app release:"
-echo "  upload dist/$ASSET as a release asset on Wyze3306/BedrockOnLinux"
+echo "  upload dist/$ASSET as a release asset on esteban-dcp/minecraft-hub-linux"

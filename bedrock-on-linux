@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Locate the bundled ``bol`` package and run its CLI."""
+"""Compatibility shim for the BedrockOnLinux binary name.
+
+Minecraft Hub for Linux replaces BedrockOnLinux, but the old ``bedrock-on-linux``
+binary name has been in user paths and shell histories for years. Forward to
+the new entry point so existing shortcuts, shell aliases and muscle memory keep
+working. The shim does not exist forever: it is here to ease the transition,
+not to live as a permanent second binary.
+"""
 import os
 import sys
 
 _here = os.path.dirname(os.path.realpath(__file__))
-for _cand in (_here,
-              os.path.join(os.path.dirname(_here), "lib", "bedrock-on-linux")):
-    if os.path.isdir(os.path.join(_cand, "bol")):
-        sys.path.insert(0, _cand)
-        break
+for _name in ("minecraft-hub", "bedrock-on-linux"):
+    _candidate = os.path.join(_here, _name)
+    if os.path.isfile(_candidate) and os.access(_candidate, os.X_OK) \
+            and not os.path.samefile(_candidate, __file__):
+        os.execv(_candidate, [os.path.basename(_candidate)] + sys.argv[1:])
 
-try:
-    from bol.cli import main
-except ModuleNotFoundError:
-    sys.exit("BedrockOnLinux: the 'bol' package is missing — reinstall the app "
-             "(https://github.com/Wyze3306/BedrockOnLinux).")
-
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print()
-        sys.exit(130)
+sys.exit(
+    "bedrock-on-linux: the 'minecraft-hub' entry point was not found next to "
+    "this shim. Reinstall the app "
+    "(https://github.com/esteban-dcp/minecraft-hub-linux)."
+)

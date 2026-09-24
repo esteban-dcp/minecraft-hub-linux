@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=Minecraft Hub for Linux
+GenericName=Minecraft Launcher
+Comment=Install and run Minecraft Bedrock, Dungeons and Legends on Linux
+Exec=minecraft-hub gui
+Icon=minecraft-hub
+Terminal=false
+Categories=Game;ActionGame;
+Keywords=minecraft;bedrock;dungeons;legends;gdk;wine;proton;mcbe;
+StartupNotify=true
+StartupWMClass=Minecraft Hub for Linux
+Actions=Play;
+
+[Desktop Action Play]
+Name=Play without the launcher
+Exec=minecraft-hub play

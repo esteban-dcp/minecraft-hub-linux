@@ -1,5 +1,5 @@
 {
-  description = "Run Minecraft Bedrock for Windows (GDK) on Linux with native Xbox identity";
+  description = "Install and play Minecraft Bedrock, Dungeons and Legends on Linux";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -24,7 +24,7 @@
     in
     {
       packages.x86_64-linux.default = pkgs.stdenv.mkDerivation {
-        pname = "bedrock-on-linux";
+        pname = "minecraft-hub";
         version = "2.2.7";
 
         src = ./.;
@@ -32,28 +32,38 @@
         nativeBuildInputs = [ pkgs.makeWrapper ];
 
         installPhase = ''
-          mkdir -p $out/lib/bedrock-on-linux $out/bin $out/share/applications $out/share/icons/hicolor/256x256/apps
+          mkdir -p $out/lib/minecraft-hub $out/bin $out/share/applications $out/share/icons/hicolor/256x256/apps
 
-          cp -r bol $out/lib/bedrock-on-linux/
-          cp bedrock-on-linux $out/lib/bedrock-on-linux/
+          cp -r bol $out/lib/minecraft-hub/
+          cp minecraft-hub $out/lib/minecraft-hub/
+          # Compatibility shim so users with `bedrock-on-linux` in their shell
+          # history or Steam shortcuts keep working.
+          cp bedrock-on-linux $out/lib/minecraft-hub/
 
-          cp data/bedrock-on-linux.desktop $out/share/applications/
-          cp data/icon.png $out/share/icons/hicolor/256x256/apps/bedrock-on-linux.png
+          cp data/minecraft-hub.desktop $out/share/applications/
+          cp data/icon.png $out/share/icons/hicolor/256x256/apps/minecraft-hub.png
 
           # Qt shows GTK's file chooser on GTK desktops, and GTK aborts when
           # its org.gtk.Settings.FileChooser schema is nowhere on
           # XDG_DATA_DIRS -- which NixOS does not put there for us (#263).
+          makeWrapper ${steam-run}/bin/steam-run $out/bin/minecraft-hub \
+            --add-flags "${bolPython}/bin/python3" \
+            --add-flags "$out/lib/minecraft-hub/minecraft-hub" \
+            --prefix PYTHONPATH : "$out/lib/minecraft-hub" \
+            --suffix XDG_DATA_DIRS : "${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}"
+
+          # Same wrapper, second entry: keep the old binary name as a shim.
           makeWrapper ${steam-run}/bin/steam-run $out/bin/bedrock-on-linux \
             --add-flags "${bolPython}/bin/python3" \
-            --add-flags "$out/lib/bedrock-on-linux/bedrock-on-linux" \
-            --prefix PYTHONPATH : "$out/lib/bedrock-on-linux" \
+            --add-flags "$out/lib/minecraft-hub/bedrock-on-linux" \
+            --prefix PYTHONPATH : "$out/lib/minecraft-hub" \
             --suffix XDG_DATA_DIRS : "${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}"
         '';
 
         meta = {
-          homepage = "https://github.com/Wyze3306/BedrockOnLinux";
+          homepage = "https://github.com/esteban-dcp/minecraft-hub-linux";
           license = pkgs.lib.licenses.mit;
-          mainProgram = "bedrock-on-linux";
+          mainProgram = "minecraft-hub";
         };
       };
     };

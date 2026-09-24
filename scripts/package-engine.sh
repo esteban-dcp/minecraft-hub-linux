@@ -35,7 +35,7 @@ mkdir -p "$OUT"
 REV="$(grep -m1 '^WINEGDK_BUILD_REV = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
 [[ -n "$REV" ]] || { echo "!! could not read WINEGDK_BUILD_REV" >&2; exit 1; }
 
-BOL_HOME="${BOL_HOME:-$HOME/.local/share/bedrock-on-linux}"
+BOL_HOME="${BOL_HOME:-$HOME/.local/share/minecraft-hub}"
 ENGINE_DIR="${1:-$BOL_HOME/proton/GDK-Proton-xuser}"
 UNIVERSAL_DGC_BUILD_DIR="${2:-${BOL_VKD3D_UNIVERSAL_BUILD:-}}"
 WINEGDK_COMMIT="${3:-${BOL_WINEGDK_SOURCE_COMMIT:-}}"
@@ -228,7 +228,7 @@ rm -rf "$STAGED_ENGINE/files/include"
 
 # GE-Proton release archives may carry maintainer bytecode caches (including
 # embedded build paths). They are neither runtime inputs nor reproducible
-# source, so never propagate them into a BedrockOnLinux engine candidate.
+# source, so never propagate them into a Minecraft Hub engine candidate.
 find "$STAGED_ENGINE" -type f \( -name '*.pyc' -o -name '.DS_Store' \) -delete
 find "$STAGED_ENGINE" -depth -type d -name '__pycache__' -empty -delete
 
@@ -278,7 +278,7 @@ WINEGDK_SOURCE_DATE_EPOCH="1784308597"
 PROVENANCE_SOURCE="$SRC/third_party/vkd3d-proton-universal"
 WINEGDK_R12_PROVENANCE_SOURCE="$SRC/third_party/winegdk-r12"
 WINEGDK_NATIVE_PROVENANCE_SOURCE="$SRC/third_party/winegdk-native5"
-PROVENANCE_BASE_REL="files/share/bedrock-on-linux/licenses-and-provenance"
+PROVENANCE_BASE_REL="files/share/minecraft-hub/licenses-and-provenance"
 VKD3D_PROVENANCE_REL="$PROVENANCE_BASE_REL/vkd3d-proton-universal"
 WINEGDK_PROVENANCE_REL="$PROVENANCE_BASE_REL/winegdk"
 GDK_PROTON_PROVENANCE_REL="$PROVENANCE_BASE_REL/gdk-proton-base"

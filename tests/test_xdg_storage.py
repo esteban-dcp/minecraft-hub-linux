@@ -44,11 +44,11 @@ def _config_snapshot(tmp_path, extra_env=None):
 def test_config_uses_xdg_data_and_config_homes(tmp_path):
     values = _config_snapshot(tmp_path)
     assert values["data"] == str(
-        tmp_path / "xdg-data" / "bedrock-on-linux"
+        tmp_path / "xdg-data" / "minecraft-hub"
     )
     assert values["default"] == values["data"]
     assert values["pointer"] == str(
-        tmp_path / "xdg-config" / "bedrock-on-linux" / "install_location"
+        tmp_path / "xdg-config" / "minecraft-hub" / "install_location"
     )
 
 
@@ -69,7 +69,7 @@ def test_flatpak_bazzite_paths_keep_legacy_source_outside_private_xdg(
         "FLATPAK_ID": "io.github.wyze3306.BedrockOnLinux",
     })
 
-    assert values["data"] == str(private / "bedrock-on-linux")
+    assert values["data"] == str(private / "minecraft-hub")
     assert values["legacy"] == str(
         home / ".local" / "share" / "bedrock-on-linux"
     )
@@ -85,13 +85,13 @@ def test_bol_home_keeps_highest_priority_over_xdg(tmp_path):
 def test_empty_bol_home_uses_safe_xdg_default_not_working_directory(tmp_path):
     values = _config_snapshot(tmp_path, {"BOL_HOME": ""})
     assert values["data"] == str(
-        tmp_path / "xdg-data" / "bedrock-on-linux"
+        tmp_path / "xdg-data" / "minecraft-hub"
     )
 
 
 def test_xdg_pointer_overrides_default_location(tmp_path):
     pointer = (
-        tmp_path / "xdg-config" / "bedrock-on-linux" / "install_location"
+        tmp_path / "xdg-config" / "minecraft-hub" / "install_location"
     )
     pointer.parent.mkdir(parents=True)
     chosen = tmp_path / "large-drive" / "minecraft"
@@ -99,7 +99,7 @@ def test_xdg_pointer_overrides_default_location(tmp_path):
     values = _config_snapshot(tmp_path)
     assert values["data"] == str(chosen)
     assert values["default"] == str(
-        tmp_path / "xdg-data" / "bedrock-on-linux"
+        tmp_path / "xdg-data" / "minecraft-hub"
     )
 
 
@@ -116,7 +116,7 @@ def test_legacy_config_pointer_remains_effective_after_xdg_upgrade(tmp_path):
 
     assert values["data"] == str(chosen)
     assert values["pointer"] == str(
-        tmp_path / "xdg-config" / "bedrock-on-linux" / "install_location"
+        tmp_path / "xdg-config" / "minecraft-hub" / "install_location"
     )
 
 
@@ -441,10 +441,10 @@ def test_relocated_install_location_is_not_migrated_into(tmp_path):
     leftovers.mkdir(parents=True)
     (leftovers / "engine.tar.gz").write_bytes(b"left behind")
     mount = tmp_path / "media" / "player"
-    chosen = mount / "bedrock-on-linux"
+    chosen = mount / "minecraft-hub"
     chosen.mkdir(parents=True)
     (chosen / "settings.json").write_text("{}", encoding="utf-8")
-    pointer = tmp_path / "xdg-config" / "bedrock-on-linux" / "install_location"
+    pointer = tmp_path / "xdg-config" / "minecraft-hub" / "install_location"
     pointer.parent.mkdir(parents=True)
     pointer.write_text(str(chosen), encoding="utf-8")
     env = dict(os.environ)
@@ -478,7 +478,7 @@ def test_relocated_install_location_is_not_migrated_into(tmp_path):
 def test_cli_migrates_before_first_flatpak_profile_command(tmp_path):
     home = tmp_path / "home"
     old_data = home / ".local" / "share" / "bedrock-on-linux"
-    new_data = tmp_path / "private-data" / "bedrock-on-linux"
+    new_data = tmp_path / "private-data" / "minecraft-hub"
     (old_data / "msa").mkdir(parents=True)
     (old_data / "msa" / "account.json").write_text('{"gamertag":"kept"}')
     env = dict(os.environ)
@@ -486,7 +486,7 @@ def test_cli_migrates_before_first_flatpak_profile_command(tmp_path):
         "HOME": str(home),
         "XDG_DATA_HOME": str(tmp_path / "private-data"),
         "XDG_CONFIG_HOME": str(tmp_path / "private-config"),
-        "FLATPAK_ID": "io.github.wyze3306.BedrockOnLinux",
+        "FLATPAK_ID": "io.github.esteban-dcp.MinecraftHub",
         "PYTHONPATH": str(ROOT),
     })
     env.pop("BOL_HOME", None)
@@ -519,7 +519,7 @@ def test_cli_migrates_before_first_flatpak_profile_command(tmp_path):
 
 def test_flatpak_manifest_mounts_exact_legacy_home_path_read_only():
     manifest = (
-        ROOT / "flatpak" / "io.github.wyze3306.BedrockOnLinux.yml"
+        ROOT / "flatpak" / "io.github.esteban-dcp.MinecraftHub.yml"
     ).read_text(encoding="utf-8")
     assert "--filesystem=~/.local/share/bedrock-on-linux:ro" in manifest
     assert "--filesystem=xdg-data/bedrock-on-linux" not in manifest

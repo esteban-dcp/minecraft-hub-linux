@@ -1095,7 +1095,7 @@ class StagingDirTests(unittest.TestCase):
         # per-application $XDG_RUNTIME_DIR is bound into every instance.
         self.assertEqual(
             xodus.staging_dir(environ=self.FLATPAK, info_path="/nonexistent"),
-            Path("/run/user/1000/bedrock-on-linux"))
+            Path("/run/user/1000/minecraft-hub"))
 
     def test_flatpak_is_recognised_without_the_environment(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1104,7 +1104,7 @@ class StagingDirTests(unittest.TestCase):
             self.assertEqual(
                 xodus.staging_dir(environ={"XDG_RUNTIME_DIR": "/run/user/9"},
                                   info_path=info),
-                Path("/run/user/9/bedrock-on-linux"))
+                Path("/run/user/9/minecraft-hub"))
 
     def test_a_flatpak_without_a_runtime_dir_keeps_the_old_location(self):
         self.assertEqual(

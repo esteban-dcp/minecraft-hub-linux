@@ -82,10 +82,10 @@ done
 
 if (( $# == 0 )); then
   set -- \
-    "$OUT/bedrock-on-linux_${expected_version}_amd64.deb" \
-    "$OUT/bedrock-on-linux-${expected_version}-1.x86_64.rpm" \
-    "$OUT/bedrock-on-linux-${expected_version}.pyz" \
-    "$OUT/BedrockOnLinux-${expected_version}-x86_64.AppImage"
+    "$OUT/minecraft-hub_${expected_version}_amd64.deb" \
+    "$OUT/minecraft-hub-${expected_version}-1.x86_64.rpm" \
+    "$OUT/minecraft-hub-${expected_version}.pyz" \
+    "$OUT/MinecraftHub-${expected_version}-x86_64.AppImage"
 fi
 
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/bol-candidate-verify.XXXXXX")"
@@ -165,7 +165,7 @@ except (OSError, KeyError, ValueError, zipfile.BadZipFile) as exc:
     raise SystemExit(f"cannot read required zipapp files from {archive}: {exc}")
 PY
       then
-        die "$name is not a valid BedrockOnLinux zipapp"
+        die "$name is not a valid MinecraftHub zipapp"
       fi
       ;;
 
@@ -182,12 +182,12 @@ PY
         || die "$name control Architecture=$deb_arch, expected amd64"
       dpkg-deb -x "$artifact" "$root" >/dev/null \
         || die "could not extract $name"
-      config="$root/usr/lib/bedrock-on-linux/bol/config.py"
-      payload_bol="$root/usr/lib/bedrock-on-linux/bol"
-      license="$root/usr/share/doc/bedrock-on-linux/copyright"
-      desktop="$root/usr/share/applications/bedrock-on-linux.desktop"
-      icon="$root/usr/share/icons/hicolor/256x256/apps/bedrock-on-linux.png"
-      launcher="$root/usr/lib/bedrock-on-linux/bedrock-on-linux"
+      config="$root/usr/lib/minecraft-hub/bol/config.py"
+      payload_bol="$root/usr/lib/minecraft-hub/bol"
+      license="$root/usr/share/doc/minecraft-hub/copyright"
+      desktop="$root/usr/share/applications/minecraft-hub.desktop"
+      icon="$root/usr/share/icons/hicolor/256x256/apps/minecraft-hub.png"
+      launcher="$root/usr/lib/minecraft-hub/minecraft-hub"
       ;;
 
     *.rpm)
@@ -213,12 +213,12 @@ PY
       fi
       ( cd "$root" && rpm2cpio "$artifact" | cpio -idm --quiet ) \
         || die "could not extract $name"
-      config="$root/usr/lib/bedrock-on-linux/bol/config.py"
-      payload_bol="$root/usr/lib/bedrock-on-linux/bol"
-      license="$root/usr/share/licenses/bedrock-on-linux/LICENSE"
-      desktop="$root/usr/share/applications/bedrock-on-linux.desktop"
-      icon="$root/usr/share/icons/hicolor/256x256/apps/bedrock-on-linux.png"
-      launcher="$root/usr/lib/bedrock-on-linux/bedrock-on-linux"
+      config="$root/usr/lib/minecraft-hub/bol/config.py"
+      payload_bol="$root/usr/lib/minecraft-hub/bol"
+      license="$root/usr/share/licenses/minecraft-hub/LICENSE"
+      desktop="$root/usr/share/applications/minecraft-hub.desktop"
+      icon="$root/usr/share/icons/hicolor/256x256/apps/minecraft-hub.png"
+      launcher="$root/usr/lib/minecraft-hub/minecraft-hub"
       ;;
 
     *.AppImage)
@@ -253,20 +253,20 @@ PY
         fi
       done
       [[ "$extracted" == true ]] \
-        || die "could not safely extract a BedrockOnLinux payload from $name"
+        || die "could not safely extract a MinecraftHub payload from $name"
       config="$root/usr/bin/bol/config.py"
       payload_bol="$root/usr/bin/bol"
-      license="$root/usr/share/licenses/bedrock-on-linux/LICENSE"
-      desktop="$root/bedrock-on-linux.desktop"
-      icon="$root/bedrock-on-linux.png"
+      license="$root/usr/share/licenses/minecraft-hub/LICENSE"
+      desktop="$root/minecraft-hub.desktop"
+      icon="$root/minecraft-hub.png"
       launcher="$root/AppRun"
       [[ -x "$root/AppRun" \
          && "$(head -n1 "$root/AppRun" 2>/dev/null)" == '#!/bin/sh' ]] \
         || die "$name AppRun is not portable /bin/sh"
-      [[ -x "$root/usr/bin/bedrock-on-linux" ]] \
+      [[ -x "$root/usr/bin/minecraft-hub" ]] \
         || die "$name embedded launcher is not executable"
       cmp -s "$desktop" \
-        "$root/usr/share/applications/bedrock-on-linux.desktop" \
+        "$root/usr/share/applications/minecraft-hub.desktop" \
         || die "$name embeds inconsistent desktop entries"
       if find "$root" \( -name '*.pyc' -o -name __pycache__ \) -print -quit \
           | grep -q .; then
@@ -321,11 +321,11 @@ PY
     || die "$name embeds an application icon different from this checkout"
   if [[ -n "$desktop" ]]; then
     [[ -f "$desktop" ]] || die "$name does not contain a desktop entry"
-    cmp -s "$SRC/data/bedrock-on-linux.desktop" "$desktop" \
+    cmp -s "$SRC/data/minecraft-hub.desktop" "$desktop" \
       || die "$name embeds a desktop entry different from this checkout"
     grep -qx 'Type=Application' "$desktop" \
       || die "$name desktop entry has no application type"
-    grep -qx 'Exec=bedrock-on-linux gui' "$desktop" \
+    grep -qx 'Exec=minecraft-hub gui' "$desktop" \
       || die "$name desktop entry has an unexpected launch command"
     grep -qx 'Terminal=false' "$desktop" \
       || die "$name desktop entry would open an unexpected terminal"

@@ -20,8 +20,8 @@ from bol.relocation import migrate_data, paths_overlap, RelocationError
 
 
 def test_default_install_location():
-    """The default location should be ~/.local/share/bedrock-on-linux."""
-    expected = str(Path.home() / ".local/share" / "bedrock-on-linux")
+    """The default location should be ~/.local/share/minecraft-hub."""
+    expected = str(Path.home() / ".local/share" / "minecraft-hub")
     assert config.default_install_location() == expected
 
 
@@ -56,7 +56,7 @@ def test_set_and_clear_install_location(monkeypatch, tmp_path):
 
 def test_setting_xdg_location_retires_legacy_pointer(monkeypatch, tmp_path):
     xdg_pointer = (
-        tmp_path / "xdg-config" / "bedrock-on-linux" / "install_location"
+        tmp_path / "xdg-config" / "minecraft-hub" / "install_location"
     )
     legacy_pointer = (
         tmp_path / ".config" / "bedrock-on-linux" / "install_location"
@@ -75,7 +75,7 @@ def test_setting_xdg_location_retires_legacy_pointer(monkeypatch, tmp_path):
 
 def test_clear_location_removes_legacy_fallback(monkeypatch, tmp_path):
     xdg_pointer = (
-        tmp_path / "xdg-config" / "bedrock-on-linux" / "install_location"
+        tmp_path / "xdg-config" / "minecraft-hub" / "install_location"
     )
     legacy_pointer = (
         tmp_path / ".config" / "bedrock-on-linux" / "install_location"

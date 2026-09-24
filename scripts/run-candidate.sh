@@ -61,4 +61,4 @@ print(f"Installed game engine validated: {manifest.build_rev}")
 PY
 
 echo "== Running checkout with the installed local candidate"
-exec "$SRC/bedrock-on-linux" "$@"
+exec "$SRC/minecraft-hub" "$@"

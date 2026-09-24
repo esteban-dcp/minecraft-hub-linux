@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build a .deb so BedrockOnLinux installs like a normal app (menu + search).
-# Usage: scripts/build-deb.sh        -> dist/bedrock-on-linux_<ver>_amd64.deb
+# Build a .deb so Minecraft Hub for Linux installs like a normal app (menu + search).
+# Usage: scripts/build-deb.sh        -> dist/minecraft-hub_<ver>_amd64.deb
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -16,16 +16,16 @@ export SOURCE_DATE_EPOCH
 rm -rf "$PKG"
 mkdir -p "$OUT" \
   "$PKG/DEBIAN" \
-  "$PKG/usr/lib/bedrock-on-linux/data" \
+  "$PKG/usr/lib/minecraft-hub/data" \
   "$PKG/usr/bin" \
   "$PKG/usr/share/applications" \
   "$PKG/usr/share/icons/hicolor/256x256/apps" \
-  "$PKG/usr/share/doc/bedrock-on-linux"
+  "$PKG/usr/share/doc/minecraft-hub"
 
 [[ -f "$SRC/data/icon.png" ]] || { echo "data/icon.png missing" >&2; exit 1; }
 
-install -m755 "$SRC/bedrock-on-linux" "$PKG/usr/lib/bedrock-on-linux/bedrock-on-linux"
-cp -r "$SRC/bol"                       "$PKG/usr/lib/bedrock-on-linux/bol"
+install -m755 "$SRC/minecraft-hub" "$PKG/usr/lib/minecraft-hub/minecraft-hub"
+cp -r "$SRC/bol"                       "$PKG/usr/lib/minecraft-hub/bol"
 # Bundle the GUI toolkit (PySide6-Essentials + shiboken6, packaging, and
 # python-xlib — none of these are apt dependencies) next to bol/ so it's on
 # sys.path. cryptography stays an apt dep. python-xlib (+ six) provides
@@ -35,16 +35,16 @@ cp -r "$SRC/bol"                       "$PKG/usr/lib/bedrock-on-linux/bol"
 # third_party/requirements-deb.txt (--require-hashes rejects any mismatch).
 python3 -m pip install --quiet --no-cache-dir --no-compile --no-deps \
   --require-hashes --only-binary=:all: --target \
-  "$PKG/usr/lib/bedrock-on-linux" \
+  "$PKG/usr/lib/minecraft-hub" \
   -r "$SRC/third_party/requirements-deb.txt"
-rm -rf "$PKG/usr/lib/bedrock-on-linux"/bin 2>/dev/null || true
-find "$PKG/usr/lib/bedrock-on-linux" -name __pycache__ -type d -exec rm -rf {} +
+rm -rf "$PKG/usr/lib/minecraft-hub"/bin 2>/dev/null || true
+find "$PKG/usr/lib/minecraft-hub" -name __pycache__ -type d -exec rm -rf {} +
 for metadata in \
-  "$PKG/usr/lib/bedrock-on-linux/shiboken6-6.9.3.dist-info" \
-  "$PKG/usr/lib/bedrock-on-linux/pyside6_essentials-6.9.3.dist-info" \
-  "$PKG/usr/lib/bedrock-on-linux/packaging-26.2.dist-info" \
-  "$PKG/usr/lib/bedrock-on-linux/python_xlib-0.33.dist-info" \
-  "$PKG/usr/lib/bedrock-on-linux/six-1.17.0.dist-info"; do
+  "$PKG/usr/lib/minecraft-hub/shiboken6-6.9.3.dist-info" \
+  "$PKG/usr/lib/minecraft-hub/pyside6_essentials-6.9.3.dist-info" \
+  "$PKG/usr/lib/minecraft-hub/packaging-26.2.dist-info" \
+  "$PKG/usr/lib/minecraft-hub/python_xlib-0.33.dist-info" \
+  "$PKG/usr/lib/minecraft-hub/six-1.17.0.dist-info"; do
   [[ -d "$metadata" ]] || {
     echo "missing pinned dependency metadata: $metadata" >&2
     exit 1
@@ -63,14 +63,14 @@ for metadata in \
     }
   fi
 done
-install -m644 "$SRC/data/icon.png"    "$PKG/usr/lib/bedrock-on-linux/data/icon.png"
-ln -s /usr/lib/bedrock-on-linux/bedrock-on-linux "$PKG/usr/bin/bedrock-on-linux"
+install -m644 "$SRC/data/icon.png"    "$PKG/usr/lib/minecraft-hub/data/icon.png"
+ln -s /usr/lib/minecraft-hub/minecraft-hub "$PKG/usr/bin/minecraft-hub"
 install -m644 "$SRC/data/icon.png" \
-  "$PKG/usr/share/icons/hicolor/256x256/apps/bedrock-on-linux.png"
-install -m644 "$SRC/data/bedrock-on-linux.desktop" \
-  "$PKG/usr/share/applications/bedrock-on-linux.desktop"
-install -m644 "$SRC/README.md" "$PKG/usr/share/doc/bedrock-on-linux/README.md"
-install -m644 "$SRC/LICENSE" "$PKG/usr/share/doc/bedrock-on-linux/copyright"
+  "$PKG/usr/share/icons/hicolor/256x256/apps/minecraft-hub.png"
+install -m644 "$SRC/data/minecraft-hub.desktop" \
+  "$PKG/usr/share/applications/minecraft-hub.desktop"
+install -m644 "$SRC/README.md" "$PKG/usr/share/doc/minecraft-hub/README.md"
+install -m644 "$SRC/LICENSE" "$PKG/usr/share/doc/minecraft-hub/copyright"
 
 # The GUI toolkit is a vendored PySide6 wheel, so the Qt libraries themselves
 # ship inside the package -- but Qt's xcb platform plugin dlopen()s against the
@@ -83,7 +83,7 @@ install -m644 "$SRC/LICENSE" "$PKG/usr/share/doc/bedrock-on-linux/copyright"
 # libEGL comes from libQt6Gui; zlib1g (priority: required) and libzstd1 (pulled
 # in by the zstd dependency above) are left implicit.
 cat > "$PKG/DEBIAN/control" <<EOF
-Package: bedrock-on-linux
+Package: minecraft-hub
 Version: ${VER}
 Section: games
 Priority: optional
@@ -96,8 +96,8 @@ Depends: python3 (>= 3.9), python3-cryptography, tar, zstd, xdg-utils,
  libxcb-randr0, libxcb-render0, libxcb-render-util0, libxcb-shape0,
  libxcb-shm0, libxcb-sync1, libxcb-util1, libxcb-xfixes0, libxcb-xkb1
 Recommends: mesa-vulkan-drivers | nvidia-driver
-Maintainer: BedrockOnLinux contributors <noreply@bedrockonlinux.invalid>
-Homepage: https://github.com/Wyze3306/BedrockOnLinux
+Maintainer: Minecraft Hub for Linux contributors <noreply@minecrafthub.invalid>
+Homepage: https://github.com/esteban-dcp/minecraft-hub-linux
 Description: Run Minecraft Bedrock (Windows GDK) on Linux, multiplayer included
  One graphical launcher that downloads a reviewed WineGDK-based GDK-Proton,
  provides native Microsoft/Xbox identity, and enables Friends, Servers,
@@ -120,13 +120,13 @@ find "$PKG" -type f -name '.DS_Store' -delete
 find "$PKG" -type d -exec chmod 0755 {} +
 find "$PKG" -type f -exec chmod 0644 {} +
 chmod 0755 "$PKG/DEBIAN/postinst" \
-  "$PKG/usr/lib/bedrock-on-linux/bedrock-on-linux"
+  "$PKG/usr/lib/minecraft-hub/minecraft-hub"
 # Normalise every payload and control timestamp explicitly. dpkg-deb also
 # consumes SOURCE_DATE_EPOCH for its ar/tar metadata, making standalone and
 # aggregate release builds byte-for-byte reproducible.
 find "$PKG" -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +
 
-DEB="$OUT/bedrock-on-linux_${VER}_amd64.deb"
+DEB="$OUT/minecraft-hub_${VER}_amd64.deb"
 dpkg-deb --build --root-owner-group "$PKG" "$DEB" >/dev/null
 rm -rf "$PKG"
 echo "Built: $DEB"

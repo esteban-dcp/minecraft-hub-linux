@@ -50,7 +50,7 @@ if [ "$PATCH_LEVEL" -gt 0 ]; then
   echo "== Applying $PATCH_LEVEL patch(es) from third_party/xodus/patches"
   # -3 is deliberately absent: a patch that no longer applies cleanly to the
   # pinned commit is a patch that has to be re-read, not merged blind.
-  git -C "$TREE" -c user.email=build@bedrock-on-linux -c user.name=BedrockOnLinux \
+  git -C "$TREE" -c user.email=build@minecraft-hub -c user.name=MinecraftHub \
     am --keep-non-patch "$PATCHES"/*.patch
   # Each patch carries the test that fails without it, and this is the only
   # place they ever run: the crate is not vendored into this repository. Every

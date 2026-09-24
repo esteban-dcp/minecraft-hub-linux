@@ -21,7 +21,7 @@ set -euo pipefail
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VER="$(grep -m1 '^VERSION = ' "$SRC/bol/config.py" | cut -d'"' -f2)"
 OUT="$SRC/dist"
-CACHE="${BOL_APPIMAGE_BUILD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/bedrock-on-linux-build/appimage}"
+CACHE="${BOL_APPIMAGE_BUILD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/minecraft-hub-build/appimage}"
 mkdir -p "$CACHE" "$OUT"
 GLIBC_CEILING="${BOL_APPIMAGE_GLIBC_CEILING:-2.31}"
 SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1782250551}"
@@ -46,12 +46,12 @@ case "${BOL_RELEASE_CHANNEL:-release}" in
   nightly) UPDATE_TAG="nightly" ;;
   *)       UPDATE_TAG="latest" ;;
 esac
-UPDATE_INFO="${BOL_APPIMAGE_UPDATE_INFO-gh-releases-zsync|${SELF_REPO%/*}|${SELF_REPO#*/}|${UPDATE_TAG}|BedrockOnLinux-*-x86_64.AppImage.zsync}"
+UPDATE_INFO="${BOL_APPIMAGE_UPDATE_INFO-gh-releases-zsync|${SELF_REPO%/*}|${SELF_REPO#*/}|${UPDATE_TAG}|MinecraftHub-*-x86_64.AppImage.zsync}"
 
-APPDIR="$OUT/BedrockOnLinux.AppDir"; rm -rf "$APPDIR"
+APPDIR="$OUT/MinecraftHub.AppDir"; rm -rf "$APPDIR"
 mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/applications" \
          "$APPDIR/usr/share/icons/hicolor/256x256/apps" \
-         "$APPDIR/usr/share/licenses/bedrock-on-linux"
+         "$APPDIR/usr/share/licenses/minecraft-hub"
 
 PBS_TAG="${PBS_TAG:-20260610}"; PBS_PY="${PBS_PY:-3.12.13}"
 PBS_ASSET="cpython-${PBS_PY}+${PBS_TAG}-x86_64-unknown-linux-gnu-install_only.tar.gz"
@@ -129,7 +129,7 @@ download_verified \
   "Debian 11 libzstd1"
 echo "== bundling libzstd.so.1, the one non-GUI library Qt asked the host for"
 python3 - "$ZSTD_DEB" "$QT_LIB/libzstd.so.1" \
-    "$APPDIR/usr/share/licenses/bedrock-on-linux/libzstd1.copyright" <<'PY'
+    "$APPDIR/usr/share/licenses/minecraft-hub/libzstd1.copyright" <<'PY'
 import io
 import lzma
 import sys
@@ -355,20 +355,22 @@ PY
 
 [[ -f "$SRC/data/icon.png" ]] || { echo "data/icon.png missing" >&2; exit 1; }
 [[ -f "$SRC/LICENSE" ]] || { echo "LICENSE missing" >&2; exit 1; }
+install -m755 "$SRC/minecraft-hub" "$APPDIR/usr/bin/minecraft-hub"
+# Compatibility shim so existing shell history keeps working.
 install -m755 "$SRC/bedrock-on-linux" "$APPDIR/usr/bin/bedrock-on-linux"
 cp -r "$SRC/bol" "$APPDIR/usr/bin/bol"
 find "$APPDIR/usr/bin/bol" -name __pycache__ -type d -exec rm -rf {} +
 mkdir -p "$APPDIR/usr/bin/data"
 cp "$SRC/data/icon.png" "$APPDIR/usr/bin/data/icon.png"
-cp "$SRC/data/icon.png" "$APPDIR/bedrock-on-linux.png"
-cp "$SRC/data/icon.png" "$APPDIR/usr/share/icons/hicolor/256x256/apps/bedrock-on-linux.png"
+cp "$SRC/data/icon.png" "$APPDIR/minecraft-hub.png"
+cp "$SRC/data/icon.png" "$APPDIR/usr/share/icons/hicolor/256x256/apps/minecraft-hub.png"
 # Normalise the launcher entry without touching the Play action's argument.
-sed '0,/^Exec=/s|^Exec=.*|Exec=bedrock-on-linux gui|' \
-   "$SRC/data/bedrock-on-linux.desktop" > "$APPDIR/bedrock-on-linux.desktop"
-cp "$APPDIR/bedrock-on-linux.desktop" \
-   "$APPDIR/usr/share/applications/bedrock-on-linux.desktop"
+sed '0,/^Exec=/s|^Exec=.*|Exec=minecraft-hub gui|' \
+   "$SRC/data/minecraft-hub.desktop" > "$APPDIR/minecraft-hub.desktop"
+cp "$APPDIR/minecraft-hub.desktop" \
+   "$APPDIR/usr/share/applications/minecraft-hub.desktop"
 install -m644 "$SRC/LICENSE" \
-  "$APPDIR/usr/share/licenses/bedrock-on-linux/LICENSE"
+  "$APPDIR/usr/share/licenses/minecraft-hub/LICENSE"
 
 cat > "$APPDIR/AppRun" <<'EOF'
 #!/bin/sh
@@ -380,11 +382,20 @@ if [ -f "$CERT" ]; then
   export REQUESTS_CA_BUNDLE="$CERT"
 fi
 unset PYTHONHOME PYTHONPATH        # self-contained; libs found via rpath
-exec "$PY" "$HERE/usr/bin/bedrock-on-linux" "$@"
+exec "$PY" "$HERE/usr/bin/minecraft-hub" "$@"
 EOF
 chmod 755 "$APPDIR/AppRun"
 /bin/sh -n "$APPDIR/AppRun" \
   || { echo "!! AppRun is not compatible with /bin/sh" >&2; exit 1; }
+
+# Compatibility shim in the bundle: a thin launcher that runs the new
+# entry point. Generated as a separate file so users with `bedrock-on-linux`
+# in their shell history or Steam shortcuts keep working.
+cat > "$APPDIR/usr/bin/bedrock-on-linux" <<'SHIM'
+#!/bin/sh
+exec "$HERE/usr/bin/minecraft-hub" "$@"
+SHIM
+chmod 755 "$APPDIR/usr/bin/bedrock-on-linux"
 
 echo "== verifying the bundle: PySide6/Qt + cryptography + HTTPS, all self-contained"
 env -i SSL_CERT_FILE="$PYLIB/python3.12/site-packages/certifi/cacert.pem" \
@@ -461,7 +472,7 @@ if os.environ.get("DISPLAY"):
     # part of this bundle a headless build box cannot exercise, so it only
     # runs when DISPLAY is present (same convention the old Tk check used).
     from PySide6.QtWidgets import QApplication
-    app = QApplication(["bedrock-on-linux-appimage-verify"])
+    app = QApplication(["minecraft-hub-appimage-verify"])
     app.quit()
     msg += " | QApplication constructed (xcb platform plugin OK)"
 print(msg)
@@ -525,7 +536,7 @@ runtime_header="$(LC_ALL=C readelf -h "$RUNTIME")"
 runtime_dynamic="$(LC_ALL=C readelf -d "$RUNTIME")"
 [[ "$runtime_dynamic" != *"(NEEDED)"* ]] \
   || { echo "!! AppImage runtime is not statically linked" >&2; exit 1; }
-APPIMG="$OUT/BedrockOnLinux-${VER}-x86_64.AppImage"
+APPIMG="$OUT/MinecraftHub-${VER}-x86_64.AppImage"
 ZSYNC="$APPIMG.zsync"
 rm -f "$APPIMG" "$ZSYNC"
 declare -a UPDATE_ARGS=()

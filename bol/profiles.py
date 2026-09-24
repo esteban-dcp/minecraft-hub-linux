@@ -426,7 +426,7 @@ def _write_desktop_entry(entry, name, comment, command):
         f"Name={one_line(name)}\n"
         f"Comment={one_line(comment)}\n"
         f"Exec={command}\n"
-        "Icon=bedrock-on-linux\n"
+        f"Icon={APP}\n"
         "Terminal=false\n"
         "Categories=Game;\n",
         encoding="utf-8",
