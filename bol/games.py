@@ -60,6 +60,51 @@ def version_dir(edition_id, version):
     return version_dir_for(BEDROCK_FAMILY, edition_id, version)
 
 
+def _launcher_for_family(family):
+    """The :class:`GameLauncher` that installs and runs ``family``.
+
+    Imported lazily so ``bol.games`` and ``bol.launchers.bedrock`` do not
+    pull on each other at module load -- both modules are imported by
+    the entry script, and ``bol.launchers.bedrock`` wraps methods on
+    ``bol.games`` so a static dependency would loop.
+    """
+    from .launchers import get_launcher
+    # PRODUCTS is the only place that knows the (family -> launcher tag)
+    # mapping; the launcher registry itself is keyed by tag. A family may
+    # have many products (Bedrock release + preview share a launcher) so
+    # any matching entry resolves to the same instance.
+    for entry in PRODUCTS:
+        if entry.get("family") == family:
+            return get_launcher(entry)
+    return None
+
+
+def version_str_for(family, folder):
+    """The version string ``folder`` reports, via the right launcher.
+
+    ``None`` for folders this launcher does not recognise, and for
+    families whose launcher is not yet implemented (the placeholder
+    returns ``None`` from every read).
+    """
+    launcher = _launcher_for_family(family)
+    if launcher is None:
+        return None
+    return launcher.version_str(folder)
+
+
+def version_key_for(family, version):
+    """Sort key for a build's version string, via the right launcher.
+
+    Falls back to a lexicographic comparison on the string itself when
+    the family has no launcher registered -- a tuple of ints for Bedrock,
+    the raw string split for everyone else.
+    """
+    launcher = _launcher_for_family(family)
+    if launcher is None:
+        return (version,)
+    return launcher.version_key(version)
+
+
 def version_dir_for(family, edition_id, version):
     """The build folder for ``(family, edition_id, version)``.
 
@@ -565,7 +610,9 @@ def _build_entry(folder, edition_entry, version, family, selected,
         # places where renaming to "name" would touch every layout. New
         # code should read "id" and look the name up from the registry.
         "name": edition_entry["name"] if edition_entry else "Minecraft",
-        "version": version or mc_version_str(root or folder) or "unknown",
+        "version": (version
+                 or version_str_for(family, root or folder)
+                 or "unknown"),
         "path": Path(folder),
         "size": _dir_size(folder) if with_size else None,
         # Complete *and* decryptable: a Store build whose package went missing
@@ -683,8 +730,8 @@ def installed_builds(with_size=True):
         out.append(_build_entry(
             selected, edition_entry, None, family,
             selected, with_size, legacy=False))
-    out.sort(key=lambda build: xodus.version_key(build["version"]),
-             reverse=True)
+    out.sort(key=lambda build: version_key_for(
+                 build.get("family"), build["version"]), reverse=True)
     return out
 
 
@@ -785,6 +832,13 @@ def remove_build(path):
 
 
 def mc_version_str(game_dir: Path):
+    """The Bedrock-specific version parser.
+
+    Bedrock-only because the manifest format is Bedrock's. The launcher
+    is the right entry point for multi-family callers -- this shim stays
+    so the Bedrock-specific surface area (fixups, content, doctor) does
+    not change.
+    """
     for nm in ("appxmanifest.xml", "AppxManifest.xml"):
         man = game_dir / nm
         if man.exists():

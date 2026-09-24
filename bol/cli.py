@@ -172,16 +172,22 @@ def main():
     sub = p.add_subparsers(dest="cmd")
 
     sub.add_parser("gui", help="open the launcher (default)")
-    sub.add_parser("play", help="launch Minecraft")
+    sp = sub.add_parser("play", help="launch the active game (default: Bedrock)")
+    sp.add_argument("-g", "--game", metavar="FAMILY",
+                   help="game family to launch (default: the active selection)")
     sp = sub.add_parser("setup", help="download & prepare Minecraft")
+    sp.add_argument("-g", "--game", metavar="FAMILY",
+                   help="game family to install (default: minecraft-bedrock)")
     sp.add_argument("--mc", metavar="EDITION",
-                    help="Minecraft edition to install: release or preview")
+                    help="Bedrock edition to install: release or preview")
     sp.add_argument("--version", metavar="BUILD",
                     help="Bedrock build to install (default: the newest); "
                          "see 'versions'")
     sp.add_argument("--beta", action="store_true", help="allow beta editions")
     sp.add_argument("--force", action="store_true", help="re-download / rebuild")
-    lv = sub.add_parser("versions", help="list installable Minecraft builds")
+    lv = sub.add_parser("versions", help="list installable builds for one family")
+    lv.add_argument("-g", "--game", metavar="FAMILY",
+                   help="family to list (default: minecraft-bedrock)")
     lv.add_argument("--beta", action="store_true")
     lv.add_argument(
         "--installed", action="store_true",
@@ -258,6 +264,15 @@ def main():
         # Migration must precede every write to the new XDG root.
         from .util import _ensure_xdg_storage
         _ensure_xdg_storage()
+        # A --game / -g flag that names a family the hub does not know
+        # about is a configuration mistake the user can fix -- say so
+        # before any of the multi-game branches take a wrong turn.
+        game_family = getattr(a, "game", None)
+        if game_family is not None:
+            known = {entry["family"] for entry in PRODUCTS}
+            if game_family not in known:
+                die(f"Unknown game family '{game_family}'. Known families: "
+                    + ", ".join(sorted(known)))
         if a.cmd == "setup":
             mc = None
             if a.mc:
@@ -267,6 +282,24 @@ def main():
                     die(f"Unknown Minecraft edition '{a.mc}'; expected "
                         + " or ".join(v["id"] for v in list_editions(True))
                         + ".")
+            from . import games as _games
+            from .launchers import get_launcher as _get_launcher
+            # ``setup`` only knows Bedrock today; a non-Bedrock family
+            # fails with the same "not implemented" message a future
+            # install would.
+            if game_family and game_family != _games.BEDROCK_FAMILY:
+                product = next(
+                    p for p in PRODUCTS if p.get("family") == game_family
+                )
+                try:
+                    _get_launcher(product).setup(
+                        force=a.force, progress=None)
+                except Exception:
+                    # ``_NotImplementedLauncher.setup`` raises BolError;
+                    # any future launcher propagates its own. Either way,
+                    # the message is actionable.
+                    raise
+                return
             do_setup(mc_edition=mc, mc_version=a.version, force=a.force)
             ok(f"Done. Run:  {APP} play")
         elif a.cmd == "play":
