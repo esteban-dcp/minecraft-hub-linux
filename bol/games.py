@@ -1,4 +1,19 @@
-"""bol.games — Minecraft edition listing, installation and selection."""
+"""bol.games — product installation, listing and active selection.
+
+The on-disk layout is one tree per product family (minecraft-bedrock today,
+minecraft-dungeons / minecraft-legends / minecraft-java to come) under
+``DATA/games/<family>/<id>/<version>/``. Pre-E3 Bedrock installs sat at
+``DATA/games/<id>/<version>/`` with no family above the build folder, and
+:meth:`migrate_legacy_layout` lifts them into the new shape on first run.
+
+The active build -- the one PLAY would launch -- is named by a JSON pointer
+at ``DATA/library/current.json`` and by the ``DATA/content`` symlink, which
+:mod:`bol.launch` resolves against the game exe. Either of the two is enough
+on its own: the symlink for ``launch`` (it wants a real path), the pointer
+for the GUI (it wants family + edition + version). They are written
+together by :func:`use_game_dir`, and the migration populates the pointer
+from the pre-E3 ``mc_edition``/``mc_version`` settings.
+"""
 # SPDX-License-Identifier: MIT
 
 import json
@@ -9,12 +24,24 @@ import time
 from pathlib import Path
 
 from . import xodus
-from .config import CONTENT, GAMES
+from .config import CONTENT, GAMES, LIBRARY, LIBRARY_POINTER
+from .config import PRODUCTS
 from .log import BolError, die, info, ok, warn
 from .util import load_settings, save_settings
 
 
 _INSTALL_METADATA = ".bedrock-on-linux-install.json"
+
+# Hardcoded so the migration can decide what to move without consulting the
+# product registry, which is exactly the layer being introduced here. Any
+# other family that lands gets its own subtree from the start.
+BEDROCK_FAMILY = "minecraft-bedrock"
+
+# The Bedrock families this layout knows how to migrate from the pre-E3
+# ``games/<edition>/<version>/`` shape. Order is significant: the test for
+# legacy detection picks the first edition that matches by id, so any
+# id-tied Bedrock edition goes here.
+_LEGACY_BEDROCK_EDITIONS = frozenset({"release", "preview"})
 
 
 def list_editions(include_beta=True):
@@ -24,7 +51,24 @@ def list_editions(include_beta=True):
 
 
 def version_dir(edition_id, version):
-    return GAMES / edition_id / version
+    """The Bedrock build folder for ``(edition_id, version)``.
+
+    Kept as the Bedrock-only convenience wrapper because every pre-E3 caller
+    was written when Bedrock was the only family. Use :func:`version_dir_for`
+    when the family is not known to be Bedrock.
+    """
+    return version_dir_for(BEDROCK_FAMILY, edition_id, version)
+
+
+def version_dir_for(family, edition_id, version):
+    """The build folder for ``(family, edition_id, version)``.
+
+    All new installs land here. The folder holds one build of one edition of
+    one family, and that is also what the launcher starts: nothing in there is
+    shared with another build or another edition, so going back to a build
+    already on disk costs nothing.
+    """
+    return GAMES / family / edition_id / version
 
 
 def list_versions(edition_id, ignore_cache=False):
@@ -110,6 +154,148 @@ def _configured_legacy_root():
     return _game_root(path)
 
 
+# --------------------------------------------------- library pointer
+#
+# The active build -- the one PLAY would launch -- is named by a small JSON
+# file at DATA/library/current.json with the shape:
+#
+#     {"family": "minecraft-bedrock", "id": "release", "version": "1.26.44.3"}
+#
+# It is read by the GUI (which needs the family, edition and version as
+# separate values, not a path) and by anyone who wants to know which build
+# the launcher would start without chasing the CONTENT symlink. CONTENT is
+# kept in sync so launch.py can keep treating it as a real path.
+
+
+def _read_pointer():
+    """The active selection, or None if no pointer file exists yet.
+
+    Tolerates a missing or malformed file: the launcher is still useful
+    without a pointer, the GUI just falls back to scanning installed_builds
+    and picking the newest.
+    """
+    try:
+        text = LIBRARY_POINTER.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    try:
+        data = json.loads(text)
+    except (ValueError, UnicodeError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    family = data.get("family")
+    edition_id = data.get("id")
+    version = data.get("version")
+    if not (isinstance(family, str) and isinstance(edition_id, str)
+            and isinstance(version, str)):
+        return None
+    return {"family": family, "id": edition_id, "version": version}
+
+
+def _write_pointer(family, edition_id, version):
+    """Update current.json atomically and report the new path.
+
+    Written through a sibling .tmp file so a crash mid-write does not leave
+    the pointer half-written -- the launcher would otherwise look at a
+    truncated JSON on the next run and silently lose the active selection.
+    """
+    payload = {"family": family, "id": edition_id, "version": version}
+    LIBRARY.mkdir(parents=True, exist_ok=True)
+    tmp = LIBRARY_POINTER.with_name("." + LIBRARY_POINTER.name + ".tmp")
+    try:
+        tmp.write_text(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n",
+            encoding="utf-8")
+        tmp.replace(LIBRARY_POINTER)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def _selection_from_settings():
+    """The active selection as last remembered by the legacy settings keys.
+
+    Used to seed the pointer file on first launch after E3 and by callers
+    that still want to read the legacy fields (``mc_edition``/``mc_version``)
+    for backward compatibility.
+    """
+    s = load_settings()
+    edition_id = (s.get("mc_edition") or "").strip()
+    version = (s.get("mc_version") or "").strip()
+    if not edition_id or not version:
+        return None
+    return {"family": BEDROCK_FAMILY, "id": edition_id, "version": version}
+
+
+def active_selection():
+    """The active (family, id, version) the launcher would start next.
+
+    Order of preference:
+      1. The pointer file at ``DATA/library/current.json`` (canonical).
+      2. The legacy settings fields ``mc_edition`` + ``mc_version``
+         (Bedrock only -- what 2.x wrote).
+
+    Returns None when neither is set, which is the case before the very
+    first install.
+    """
+    return _read_pointer() or _selection_from_settings()
+
+
+# --------------------------------------------------------- legacy migration
+#
+# Pre-E3 the layout was ``games/<edition>/<version>/`` (Bedrock only). The
+# new layout is ``games/<family>/<id>/<version>/``. On first launch after
+# E3, lift every Bedrock edition folder to ``games/minecraft-bedrock/<id>/``
+# and rewrite the active selection so the launcher keeps pointing at the
+# same build. The legacy games/<id>/ folder for non-Bedrock editions does
+# not exist (no other family ever used this tree) so there is nothing to
+# mistake for Bedrock.
+
+
+def migrate_legacy_layout():
+    """Move pre-E3 Bedrock installs into the family-keyed layout.
+
+    Idempotent: does nothing if no legacy folders are present, and re-runs
+    are safe after a partial move. Returns the list of editions that were
+    moved, so the caller can warn the user about what changed.
+    """
+    if not GAMES.exists():
+        return []
+    moved = []
+    target_parent = GAMES / BEDROCK_FAMILY
+    for entry in sorted(GAMES.iterdir()):
+        if not entry.is_dir() or entry.is_symlink():
+            continue
+        if entry.name == BEDROCK_FAMILY:
+            continue
+        if entry.name not in _LEGACY_BEDROCK_EDITIONS:
+            continue
+        if xodus.edition(entry.name) is None:
+            continue
+        target = target_parent / entry.name
+        target_parent.mkdir(parents=True, exist_ok=True)
+        if target.exists():
+            # A previous partial move already put the new tree in place; leave
+            # the legacy copy where it is so the user can decide what to do,
+            # and let the next launch of installed_builds() reconcile it.
+            continue
+        try:
+            entry.rename(target)
+        except OSError:
+            # A read-only bind mount or a permission issue: do not strand the
+            # user. The legacy copy still works through the fallback paths.
+            continue
+        moved.append(entry.name)
+    if moved:
+        # Seed the pointer from the legacy settings so the launcher does not
+        # lose its selection across the move. Best effort: a missing file
+        # just leaves the GUI to discover the selection on its own.
+        seed = _selection_from_settings()
+        if seed is not None:
+            _write_pointer(seed["family"], seed["id"], seed["version"])
+    return moved
+
+
 def install_game(edition, version=None, progress=None, force=False):
     """Install one build of one edition through Xodus.
 
@@ -132,7 +318,8 @@ def install_game(edition, version=None, progress=None, force=False):
                  f"{catalogue[0]['version']} instead.")
         entry = catalogue[0]
 
-    dest = version_dir(edition["id"], entry["version"])
+    family = edition.get("family") or BEDROCK_FAMILY
+    dest = version_dir_for(family, edition["id"], entry["version"])
     dest.parent.mkdir(parents=True, exist_ok=True)
     root = _game_root(dest)
     if root and not force:
@@ -197,8 +384,10 @@ def _mention_other_builds(edition_id, version):
     """
     try:
         others = [build for build in installed_builds()
-                  if build["managed"] and not (build["edition"] == edition_id
-                                               and build["version"] == version)]
+                  if build["managed"]
+                  and not (build["family"] == BEDROCK_FAMILY
+                           and build["id"] == edition_id
+                           and build["version"] == version)]
     except OSError:
         return
     if not others:
@@ -208,6 +397,46 @@ def _mention_other_builds(edition_id, version):
          f"{'s are' if len(others) != 1 else ' is'} still installed, taking "
          f"{_human_size(total)}. Remove the ones you are finished with in "
          "Settings ▸ Versions — worlds and settings are kept.")
+
+
+def _selection_from_path(folder):
+    """The (family, id, version) triple that ``folder`` belongs to.
+
+    Reads the folder's position under GAMES and matches the family and
+    edition parts of the path. For folders outside the managed tree -- an
+    imported copy -- the family is best-effort: Bedrock today (the only
+    thing the launcher has ever imported), so the settings can still be
+    updated and the GUI knows which edition picker to show.
+    """
+    try:
+        parts = folder.relative_to(GAMES.resolve()).parts
+    except ValueError:
+        version = mc_version_str(folder) or "unknown"
+        return {"family": BEDROCK_FAMILY, "id": None, "version": version}
+    # Three parts (family, edition, version): current layout.
+    if len(parts) == 3 and PRODUCTS_BY_FAMILY_ID().get((parts[0], parts[1])):
+        return {"family": parts[0], "id": parts[1], "version": parts[2]}
+    # Two parts (edition, version): pre-E3 Bedrock layout. The legacy
+    # folder moved into the bedrock family on migration; treat it as such
+    # even before the move so the pointer still names something.
+    if len(parts) == 2 and xodus.edition(parts[0]):
+        return {"family": BEDROCK_FAMILY, "id": parts[0],
+                "version": parts[1]}
+    version = parts[-1] if parts else "unknown"
+    return {"family": BEDROCK_FAMILY, "id": None, "version": version}
+
+
+# Pre-index the registry so the path lookup above is a single dict read
+# instead of a registry walk on every install.
+_PRODUCTS_BY_FAMILY_ID = None
+def PRODUCTS_BY_FAMILY_ID():
+    global _PRODUCTS_BY_FAMILY_ID
+    if _PRODUCTS_BY_FAMILY_ID is None:
+        _PRODUCTS_BY_FAMILY_ID = {
+            (entry["family"], entry["id"]): entry
+            for entry in PRODUCTS
+        }
+    return _PRODUCTS_BY_FAMILY_ID
 
 
 def use_game_dir(folder):
@@ -228,21 +457,27 @@ def use_game_dir(folder):
     s = load_settings()
     s["game_dir"] = str(folder)
     # Remember what was selected so the picker and auto-select default to what
-    # you last played. games/<edition>/<version>/ names both outright; a folder
-    # from outside the managed tree names neither, and keeping the previous
-    # choice there would silently reinstall over an imported copy.
-    try:
-        parts = folder.relative_to(GAMES.resolve()).parts
-    except ValueError:
-        parts = ()
-    if len(parts) >= 2 and xodus.edition(parts[0]):
-        s["mc_edition"] = parts[0]
-        s["mc_version"] = parts[1]
+    # you last played. The new layout is games/<family>/<id>/<version>/;
+    # legacy 2.x was games/<id>/<version>/. A folder from outside the managed
+    # tree names neither, and keeping the previous choice there would silently
+    # reinstall over an imported copy.
+    selection = _selection_from_path(folder)
+    s["library.current"] = selection
+    # The legacy keys only make sense for Bedrock -- and only when the
+    # folder is inside the managed tree, so we know which edition it is.
+    # An imported copy (selection has no id) leaves the previous choice in
+    # place: a setup that names neither the previous edition nor this one
+    # would silently reinstall over the import on the next launch.
+    if selection["family"] == BEDROCK_FAMILY and selection["id"]:
+        s["mc_edition"] = selection["id"]
+        s["mc_version"] = selection["version"]
     else:
         # An imported copy still reports its build, for display and bug reports.
         version = mc_version_str(folder)
         if version:
             s["mc_version"] = version
+    _write_pointer(selection["family"], selection["id"] or "",
+                  selection["version"])
     save_settings(s)
     return folder
 
@@ -318,12 +553,17 @@ def _holds(folder, path):
     return True
 
 
-def _build_entry(folder, edition_entry, version, selected, with_size=True):
+def _build_entry(folder, edition_entry, version, family, selected,
+                  with_size=True, legacy=False):
     root = xodus.game_root(folder)
     record = _install_record(folder)
     managed = _managed_parts(folder) is not None
     return {
-        "edition": edition_entry["id"] if edition_entry else None,
+        "family": family,
+        "id": edition_entry["id"] if edition_entry else None,
+        # Kept under the old key because the GUI renders it in several
+        # places where renaming to "name" would touch every layout. New
+        # code should read "id" and look the name up from the registry.
         "name": edition_entry["name"] if edition_entry else "Minecraft",
         "version": version or mc_version_str(root or folder) or "unknown",
         "path": Path(folder),
@@ -337,28 +577,35 @@ def _build_entry(folder, edition_entry, version, selected, with_size=True):
         # Only what the launcher itself downloaded is the launcher's to
         # delete; a folder the player imported stays theirs.
         "managed": managed,
-        # In the tree the launcher owns, but not under an edition: an install
-        # from before the move to the Store. It is a real build and the one
-        # some players still have, so it is listed and removable like the
-        # rest -- it just cannot be downloaded again from here.
-        "legacy": managed and edition_entry is None,
+        # In the tree the launcher owns, but not under the new family key:
+        # either a pre-E3 Bedrock install (still at games/<id>/<version>/)
+        # or a copy the launcher cannot re-download. Real builds, listed
+        # and removable like the rest.
+        "legacy": legacy,
     }
 
 
 def installed_builds(with_size=True):
-    """Every Minecraft build on disk, newest first.
+    """Every installed build across all families, newest first.
 
-    Covers the three shapes a build can have here: the managed layout
-    (``games/<edition>/<version>/``), the one an install from before the move
-    to the Store left behind (``games/<version>/``), and a copy the player
-    pointed the launcher at from somewhere else -- listed so the one in use is
-    always shown, and marked unmanaged so nothing offers to delete it.
+    Walks two shapes the on-disk tree can have:
+
+      * ``games/<family>/<id>/<version>/`` -- the current layout.
+      * ``games/<id>/<version>/`` -- a pre-E3 Bedrock install that the
+        migration has not yet lifted into ``games/minecraft-bedrock/<id>/``.
+        Listed under ``family="minecraft-bedrock"`` with ``legacy=True`` so
+        the GUI can show it, run it and offer to delete it without
+        pretending it was downloaded into the family-keyed tree.
+
+    A build folder the player pointed the launcher at from somewhere else
+    is also listed (so the active selection is always shown) and marked
+    ``managed=False`` so nothing offers to delete it.
 
     ``with_size=False`` skips walking each build, for callers that only need
     to know what is there.
     """
     selected = _selected_root()
-    editions = {entry["id"]: entry for entry in list_editions(True)}
+    products_by_family_id = PRODUCTS_BY_FAMILY_ID()
     out, seen = [], set()
     try:
         top = sorted(GAMES.iterdir())
@@ -367,8 +614,24 @@ def installed_builds(with_size=True):
     for entry in top:
         if not entry.is_dir() or entry.is_symlink():
             continue
-        edition_entry = editions.get(entry.name)
-        if edition_entry is not None:
+        # Pre-Store layout: games/<version>/, with no edition folder above
+        # it (older installs copied from before Microsoft Store downloads).
+        # The folder name is a version string, not an edition id -- and not
+        # a known family either -- so it falls through both branches below
+        # and is recognised by the fact it holds a complete build on its
+        # own.
+        if (xodus.edition(entry.name) is None
+                and entry.name not in {p["family"] for p in list_editions(True)}
+                and xodus.game_root(entry) is not None):
+            out.append(_build_entry(
+                entry, None, entry.name, BEDROCK_FAMILY,
+                selected, with_size, legacy=True))
+            seen.add(entry.resolve())
+            continue
+        # Pre-E3 Bedrock layout: games/<edition>/<version>/. The first
+        # level is an edition id, not a family.
+        if entry.name in {p["id"] for p in list_editions(True)}:
+            edition_entry = xodus.edition(entry.name)
             try:
                 builds = sorted(entry.iterdir())
             except OSError:
@@ -376,18 +639,50 @@ def installed_builds(with_size=True):
             for build in builds:
                 if not build.is_dir() or xodus.game_root(build) is None:
                     continue
-                out.append(_build_entry(build, edition_entry, build.name,
-                                        selected, with_size))
+                out.append(_build_entry(
+                    build, edition_entry, build.name, BEDROCK_FAMILY,
+                    selected, with_size, legacy=True))
                 seen.add(build.resolve())
             continue
-        # The pre-Store layout: games/<version>/, with no edition above it.
-        if xodus.game_root(entry) is not None:
-            out.append(_build_entry(entry, None, entry.name, selected,
-                                    with_size))
-            seen.add(entry.resolve())
+        # Current layout: games/<family>/<edition>/<version>/. Anything
+        # else at this depth is left alone (it is not a build folder the
+        # launcher can start).
+        family_products = [p for p in list_editions(True)
+                           if p.get("family") == entry.name]
+        if not family_products:
+            continue
+        try:
+            editions = sorted(entry.iterdir())
+        except OSError:
+            continue
+        for edition_dir in editions:
+            if not edition_dir.is_dir() or edition_dir.is_symlink():
+                continue
+            edition_entry = next(
+                (p for p in family_products if p["id"] == edition_dir.name),
+                None)
+            if edition_entry is None:
+                continue
+            try:
+                builds = sorted(edition_dir.iterdir())
+            except OSError:
+                continue
+            for build in builds:
+                if not build.is_dir() or xodus.game_root(build) is None:
+                    continue
+                out.append(_build_entry(
+                    build, edition_entry, build.name, entry.name,
+                    selected, with_size, legacy=False))
+                seen.add(build.resolve())
     if selected is not None and _game_root(selected) is not None and not any(
             _holds(build["path"], selected) for build in out):
-        out.append(_build_entry(selected, None, None, selected, with_size))
+        selection = _selection_from_path(selected)
+        family = selection["family"] if selection else None
+        edition_id = selection["id"] if selection else None
+        edition_entry = (xodus.edition(edition_id) if edition_id else None)
+        out.append(_build_entry(
+            selected, edition_entry, None, family,
+            selected, with_size, legacy=False))
     out.sort(key=lambda build: xodus.version_key(build["version"]),
              reverse=True)
     return out
@@ -411,13 +706,41 @@ def remove_build(path):
     except OSError as exc:
         raise BolError(f"Could not remove {path}: {exc}") from exc
     parts = _managed_parts(folder)
-    # One or two components: games/<version>/ or games/<edition>/<version>/.
+    # Three depths are valid:
+    #   games/<family>/<edition>/<version>/   -- the current layout.
+    #   games/<edition>/<version>/            -- pre-E3 Bedrock (still served
+    #                                            by the GUI until the migration
+    #                                            runs).
+    #   games/<version>/                      -- the very oldest layout, from
+    #                                            before the move to the Store.
     # Anything else is GAMES itself, a folder deeper inside a build, or --
-    # the one that would really hurt -- games/<edition>/, which holds every
-    # build of that edition and has exactly the depth of the pre-Store
-    # layout. A delete aimed at any of those is a bug, not a request.
-    if (not parts or len(parts) > 2
-            or (len(parts) == 1 and xodus.edition(parts[0]))):
+    # the one that would really hurt -- games/<family>/ or games/<edition>/,
+    # which hold every build of that edition. A delete aimed at any of those
+    # is a bug, not a request.
+    if not parts:
+        raise BolError(
+            f"{folder} is not a Minecraft build this launcher downloaded, so "
+            "it will not be removed. Delete it yourself if you are sure.")
+    if len(parts) == 3:
+        family_dir, edition_dir, _version = parts
+        if PRODUCTS_BY_FAMILY_ID().get((family_dir, edition_dir)) is None:
+            raise BolError(
+                f"{folder} is not a Minecraft build this launcher "
+                "downloaded, so it will not be removed. Delete it yourself "
+                "if you are sure.")
+    elif len(parts) == 2:
+        edition_dir, _version = parts
+        # games/<family>/ is the tree the launcher owns -- and has the same
+        # depth as the pre-Store layout, so length alone does not gate it.
+        if edition_dir in {p["family"] for p in list_editions(True)}:
+            raise BolError(
+                f"{folder} is not a Minecraft build this launcher downloaded, "
+                "so it will not be removed. Delete it yourself if you are "
+                "sure.")
+        if xodus.edition(edition_dir) is None:
+            # games/<version>/, the pre-Store layout. Allowed; not gated.
+            pass
+    else:
         raise BolError(
             f"{folder} is not a Minecraft build this launcher downloaded, so "
             "it will not be removed. Delete it yourself if you are sure.")
@@ -439,7 +762,10 @@ def remove_build(path):
     shutil.rmtree(folder)
     if _holds(folder, selected):
         # The launcher runs the game through this symlink, so it goes with
-        # the folder it points into.
+        # the folder it points into. The pointer file is what the GUI and
+        # the new layout look at, so the build that just went away is dropped
+        # from there too: leaving a dangling pointer would only confuse the
+        # next launch.
         try:
             if CONTENT.is_symlink():
                 CONTENT.unlink()
@@ -447,7 +773,14 @@ def remove_build(path):
             pass
         settings = load_settings()
         settings.pop("game_dir", None)
+        settings.pop("library.current", None)
+        settings.pop("mc_edition", None)
+        settings.pop("mc_version", None)
         save_settings(settings)
+        try:
+            LIBRARY_POINTER.unlink()
+        except OSError:
+            pass
     return freed
 
 

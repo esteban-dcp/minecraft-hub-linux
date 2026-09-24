@@ -62,6 +62,13 @@ CACHE = DATA / "cache"
 LOGS = DATA / "logs"
 MSA_DIR = DATA / "msa"
 SETTINGS = DATA / "settings.json"
+# Library metadata: not a game directory, but the place that records which
+# game, edition and build the launcher would start next. The CONTENT symlink
+# below still points at the active build folder (launch.py reads it); the
+# pointer file is the canonical record that survives a missing or stale
+# symlink and is what new code reads first.
+LIBRARY = DATA / "library"
+LIBRARY_POINTER = LIBRARY / "current.json"
 
 GDK_PROTON_REPO = "Weather-OS/GDK-Proton"
 UMU_REPO = "Open-Wine-Components/umu-launcher"

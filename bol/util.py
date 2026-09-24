@@ -35,7 +35,16 @@ _XDG_MIGRATION_CHECKED = False
 
 
 def _ensure_xdg_storage():
-    """Run the guarded legacy XDG migration before reading user state."""
+    """Run the guarded legacy migrations before reading user state.
+
+    Two migrations can run on first launch of a 2.x install: the XDG
+    directory move (Flatpak vs host layout) and the library layout lift
+    (pre-E3 Bedrock installs at ``games/<edition>/<version>/`` become
+    ``games/minecraft-bedrock/<edition>/<version>/``). Both are
+    idempotent and best-effort: a failure leaves the legacy tree in
+    place rather than blocking the launcher, because the legacy code
+    paths still know how to read it.
+    """
     global _XDG_MIGRATION_CHECKED
     if _XDG_MIGRATION_CHECKED:
         return
@@ -47,6 +56,12 @@ def _ensure_xdg_storage():
             "Could not migrate the legacy data safely. The original "
             f"files were retained; free disk space/check permissions ({exc})."
         )
+    try:
+        from .games import migrate_legacy_layout
+        migrate_legacy_layout()
+    except Exception as exc:
+        warn(f"Could not lift the pre-E3 game library into the family-keyed "
+             f"layout ({exc}); the launcher keeps reading the legacy tree.")
     _XDG_MIGRATION_CHECKED = True
 
 def run(cmd, **kw):

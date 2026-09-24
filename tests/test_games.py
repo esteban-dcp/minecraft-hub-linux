@@ -13,26 +13,35 @@ from bol.log import BolError
 
 
 _CATALOGUE = (
-    {"version": "1.26.44.3",
-     "urls": ["http://assets1.xboxlive.com/Z/a/"
-              "7792d9ce-355a-493c-afbd-768f4a77c3b0/1.26.4403.0.b/x.msixvc"]},
-    {"version": "1.26.42.1",
-     "urls": ["http://assets1.xboxlive.com/Z/a/"
-              "7792d9ce-355a-493c-afbd-768f4a77c3b0/1.26.4201.0.b/x.msixvc"]},
+    {
+        "version": "1.26.44.3",
+        "urls": [
+            "http://assets1.xboxlive.com/Z/a/"
+            "7792d9ce-355a-493c-afbd-768f4a77c3b0/1.26.4403.0.b/x.msixvc"
+        ],
+    },
+    {
+        "version": "1.26.42.1",
+        "urls": [
+            "http://assets1.xboxlive.com/Z/a/"
+            "7792d9ce-355a-493c-afbd-768f4a77c3b0/1.26.4201.0.b/x.msixvc"
+        ],
+    },
 )
 
 
 def _catalogue(installed=()):
-    return [dict(entry, installed=entry["version"] in installed)
-            for entry in _CATALOGUE]
+    return [
+        dict(entry, installed=entry["version"] in installed) for entry in _CATALOGUE
+    ]
 
 
 def _write_game(root, marker=b"MZ game"):
     root.mkdir(parents=True, exist_ok=True)
     (root / "Minecraft.Windows.exe").write_bytes(marker)
     (root / "AppxManifest.xml").write_text(
-        '<Package><Identity Version="1.26.3301.0" /></Package>',
-        encoding="utf-8")
+        '<Package><Identity Version="1.26.3301.0" /></Package>', encoding="utf-8"
+    )
     return root
 
 
@@ -64,10 +73,13 @@ class VersionListingTests(unittest.TestCase):
     def test_builds_already_on_disk_are_marked(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
-            _write_game(base / "release" / "1.26.42.1")
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(games.xodus, "version_catalogue",
-                                      return_value=_CATALOGUE):
+            _write_game(base / "minecraft-bedrock" / "release" / "1.26.42.1")
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(
+                    games.xodus, "version_catalogue", return_value=_CATALOGUE
+                ),
+            ):
                 builds = games.list_versions("release")
 
         by_version = {b["version"]: b for b in builds}
@@ -79,16 +91,20 @@ class VersionListingTests(unittest.TestCase):
     def test_a_build_that_lost_its_package_is_not_marked_installed(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
-            _write_store_game(base / "release" / "1.26.42.1", package=False)
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(games.xodus, "version_catalogue",
-                                      return_value=_CATALOGUE):
+            _write_store_game(
+                base / "minecraft-bedrock" / "release" / "1.26.42.1", package=False
+            )
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(
+                    games.xodus, "version_catalogue", return_value=_CATALOGUE
+                ),
+            ):
                 builds = games.list_versions("release")
 
         # Nothing in that folder can be launched, so offering it as a build
         # already on disk is offering a build that does not start.
-        self.assertFalse(
-            {b["version"]: b for b in builds}["1.26.42.1"]["installed"])
+        self.assertFalse({b["version"]: b for b in builds}["1.26.42.1"]["installed"])
 
 
 class InstallTests(unittest.TestCase):
@@ -98,15 +114,20 @@ class InstallTests(unittest.TestCase):
         # read whatever is installed on the machine running them.
         self.settings = {}
         for target, kwargs in (
-                ("load_settings", {"side_effect": lambda: dict(self.settings)}),
-                ("list_versions", {"return_value": _catalogue()})):
+            ("load_settings", {"side_effect": lambda: dict(self.settings)}),
+            ("list_versions", {"return_value": _catalogue()}),
+        ):
             patcher = mock.patch.object(games, target, **kwargs)
             patcher.start()
             self.addCleanup(patcher.stop)
 
     def _edition(self):
-        return {"id": "release", "product": "9NBLGGH2JHXJ",
-                "name": "Minecraft for Windows", "beta": False}
+        return {
+            "id": "release",
+            "product": "9NBLGGH2JHXJ",
+            "name": "Minecraft for Windows",
+            "beta": False,
+        }
 
     def test_no_version_named_installs_the_newest(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -115,18 +136,26 @@ class InstallTests(unittest.TestCase):
             def fake_install(url, dest, progress=None):
                 _write_game(Path(dest))
 
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(games.xodus, "install",
-                                      side_effect=fake_install) as install:
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(
+                    games.xodus, "install", side_effect=fake_install
+                ) as install,
+            ):
                 root = games.install_game(self._edition())
 
-            self.assertEqual(root, base / "release" / "1.26.44.3")
+            self.assertEqual(root, base / "minecraft-bedrock" / "release" / "1.26.44.3")
             # Every mirror of that build, so a truncated body is retryable.
-            self.assertTrue(all("1.26.4403" in url
-                                for url in install.call_args[0][0]))
+            self.assertTrue(all("1.26.4403" in url for url in install.call_args[0][0]))
             record = json.loads(
-                (base / "release" / "1.26.44.3"
-                 / games._INSTALL_METADATA).read_text())
+                (
+                    base
+                    / "minecraft-bedrock"
+                    / "release"
+                    / "1.26.44.3"
+                    / games._INSTALL_METADATA
+                ).read_text()
+            )
             self.assertEqual(record["version"], "1.26.44.3")
 
     def test_a_named_version_is_the_one_installed(self):
@@ -136,22 +165,26 @@ class InstallTests(unittest.TestCase):
             def fake_install(url, dest, progress=None):
                 _write_game(Path(dest))
 
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(games.xodus, "install",
-                                      side_effect=fake_install) as install:
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(
+                    games.xodus, "install", side_effect=fake_install
+                ) as install,
+            ):
                 root = games.install_game(self._edition(), "1.26.42.1")
 
-            self.assertEqual(root, base / "release" / "1.26.42.1")
-            self.assertTrue(all("1.26.4201" in url
-                                for url in install.call_args[0][0]))
+            self.assertEqual(root, base / "minecraft-bedrock" / "release" / "1.26.42.1")
+            self.assertTrue(all("1.26.4201" in url for url in install.call_args[0][0]))
 
     def test_a_build_already_on_disk_is_not_downloaded_again(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
-            _write_game(base / "release" / "1.26.42.1")
+            _write_game(base / "minecraft-bedrock" / "release" / "1.26.42.1")
 
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(games.xodus, "install") as install:
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(games.xodus, "install") as install,
+            ):
                 games.install_game(self._edition(), "1.26.42.1")
 
             install.assert_not_called()
@@ -159,10 +192,12 @@ class InstallTests(unittest.TestCase):
     def test_a_store_build_with_its_package_is_not_downloaded_again(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
-            _write_store_game(base / "release" / "1.26.42.1")
+            _write_store_game(base / "minecraft-bedrock" / "release" / "1.26.42.1")
 
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(games.xodus, "install") as install:
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(games.xodus, "install") as install,
+            ):
                 games.install_game(self._edition(), "1.26.42.1")
 
             install.assert_not_called()
@@ -175,17 +210,24 @@ class InstallTests(unittest.TestCase):
         # no reinstall of its own.
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
-            _write_store_game(base / "release" / "1.26.42.1", package=False)
+            _write_store_game(
+                base / "minecraft-bedrock" / "release" / "1.26.42.1", package=False
+            )
 
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(
-                        games.xodus, "install",
-                        side_effect=lambda url, dest, progress=None:
-                            _write_store_game(Path(dest))) as install:
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(
+                    games.xodus,
+                    "install",
+                    side_effect=lambda url, dest, progress=None: _write_store_game(
+                        Path(dest)
+                    ),
+                ) as install,
+            ):
                 root = games.install_game(self._edition(), "1.26.42.1")
 
             install.assert_called_once()
-            self.assertEqual(root, base / "release" / "1.26.42.1")
+            self.assertEqual(root, base / "minecraft-bedrock" / "release" / "1.26.42.1")
 
     def test_a_download_that_leaves_no_package_is_rejected(self):
         # The other half: repairing it must actually produce a build that can
@@ -194,12 +236,17 @@ class InstallTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
 
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(
-                        games.xodus, "install",
-                        side_effect=lambda url, dest, progress=None:
-                            _write_store_game(Path(dest), package=False)), \
-                    self.assertRaises(BolError):
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(
+                    games.xodus,
+                    "install",
+                    side_effect=lambda url, dest, progress=None: _write_store_game(
+                        Path(dest), package=False
+                    ),
+                ),
+                self.assertRaises(BolError),
+            ):
                 games.install_game(self._edition(), "1.26.42.1")
 
     def test_a_delisted_version_falls_back_to_the_newest(self):
@@ -209,19 +256,22 @@ class InstallTests(unittest.TestCase):
             def fake_install(url, dest, progress=None):
                 _write_game(Path(dest))
 
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(games.xodus, "install",
-                                      side_effect=fake_install):
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(games.xodus, "install", side_effect=fake_install),
+            ):
                 root = games.install_game(self._edition(), "1.0.0.0")
 
             # A build Microsoft stopped serving must not leave PLAY dead.
-            self.assertEqual(root, base / "release" / "1.26.44.3")
+            self.assertEqual(root, base / "minecraft-bedrock" / "release" / "1.26.44.3")
 
     def test_an_empty_catalogue_is_an_error(self):
-        with tempfile.TemporaryDirectory() as tmp, \
-                mock.patch.object(games, "GAMES", Path(tmp)), \
-                mock.patch.object(games, "list_versions", return_value=[]), \
-                self.assertRaises(BolError):
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(games, "GAMES", Path(tmp)),
+            mock.patch.object(games, "list_versions", return_value=[]),
+            self.assertRaises(BolError),
+        ):
             games.install_game(self._edition())
 
     def test_an_install_from_before_the_store_switch_still_starts(self):
@@ -232,10 +282,14 @@ class InstallTests(unittest.TestCase):
             legacy = _write_game(base / "1.26.42.1" / "Microsoft.MinecraftUWP")
             self.settings["game_dir"] = str(legacy)
 
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(
-                        games.xodus, "install",
-                        side_effect=BolError("downloader not published")):
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(
+                    games.xodus,
+                    "install",
+                    side_effect=BolError("downloader not published"),
+                ),
+            ):
                 root = games.install_game(self._edition())
 
             # An upgrade must not strand a player on a game they already have.
@@ -250,19 +304,26 @@ class InstallTests(unittest.TestCase):
             # NotSignedIn is a BolError, so the inherited-copy fallback would
             # otherwise eat it and the launcher would keep starting the old
             # build instead of offering the sign-in that would update it.
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(
-                        games.xodus, "install",
-                        side_effect=games.xodus.NotSignedIn("sign in")), \
-                    self.assertRaises(games.xodus.NotSignedIn):
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(
+                    games.xodus,
+                    "install",
+                    side_effect=games.xodus.NotSignedIn("sign in"),
+                ),
+                self.assertRaises(games.xodus.NotSignedIn),
+            ):
                 games.install_game(self._edition())
 
     def test_a_failed_download_with_nothing_installed_is_an_error(self):
-        with tempfile.TemporaryDirectory() as tmp, \
-                mock.patch.object(games, "GAMES", Path(tmp)), \
-                mock.patch.object(games.xodus, "install",
-                                  side_effect=BolError("no network")), \
-                self.assertRaises(BolError):
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(games, "GAMES", Path(tmp)),
+            mock.patch.object(
+                games.xodus, "install", side_effect=BolError("no network")
+            ),
+            self.assertRaises(BolError),
+        ):
             games.install_game(self._edition())
 
     def test_incomplete_tree_after_streaming_is_rejected(self):
@@ -273,10 +334,11 @@ class InstallTests(unittest.TestCase):
                 Path(dest).mkdir(parents=True, exist_ok=True)
                 (Path(dest) / "Minecraft.Windows.exe").write_bytes(b"MZ")
 
-            with mock.patch.object(games, "GAMES", base), \
-                    mock.patch.object(games.xodus, "install",
-                                      side_effect=truncated), \
-                    self.assertRaises(BolError):
+            with (
+                mock.patch.object(games, "GAMES", base),
+                mock.patch.object(games.xodus, "install", side_effect=truncated),
+                self.assertRaises(BolError),
+            ):
                 games.install_game(self._edition())
 
 
@@ -285,15 +347,19 @@ class SelectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
             games_dir = base / "games"
-            root = _write_game(games_dir / "preview" / "1.26.50.25")
+            root = _write_game(
+                games_dir / "minecraft-bedrock" / "preview" / "1.26.50.25"
+            )
             settings = {}
 
-            with mock.patch.object(games, "GAMES", games_dir), \
-                    mock.patch.object(games, "CONTENT", base / "content"), \
-                    mock.patch.object(games, "load_settings",
-                                      side_effect=lambda: dict(settings)), \
-                    mock.patch.object(games, "save_settings",
-                                      side_effect=settings.update):
+            with (
+                mock.patch.object(games, "GAMES", games_dir),
+                mock.patch.object(games, "CONTENT", base / "content"),
+                mock.patch.object(
+                    games, "load_settings", side_effect=lambda: dict(settings)
+                ),
+                mock.patch.object(games, "save_settings", side_effect=settings.update),
+            ):
                 games.use_game_dir(root)
 
         self.assertEqual(settings["mc_edition"], "preview")
@@ -305,12 +371,14 @@ class SelectionTests(unittest.TestCase):
             root = _write_game(base / "elsewhere")
             settings = {"mc_edition": "release"}
 
-            with mock.patch.object(games, "GAMES", base / "games"), \
-                    mock.patch.object(games, "CONTENT", base / "content"), \
-                    mock.patch.object(games, "load_settings",
-                                      side_effect=lambda: dict(settings)), \
-                    mock.patch.object(games, "save_settings",
-                                      side_effect=settings.update):
+            with (
+                mock.patch.object(games, "GAMES", base / "games"),
+                mock.patch.object(games, "CONTENT", base / "content"),
+                mock.patch.object(
+                    games, "load_settings", side_effect=lambda: dict(settings)
+                ),
+                mock.patch.object(games, "save_settings", side_effect=settings.update),
+            ):
                 games.use_game_dir(root)
 
         # A copy from outside the managed tree is not an edition; keeping the
@@ -321,7 +389,8 @@ class SelectionTests(unittest.TestCase):
 
     def test_auto_selection_prefers_the_remembered_choice(self):
         edition, version = games._auto_selection(
-            {"mc_edition": "preview", "mc_version": "1.26.50.25"})
+            {"mc_edition": "preview", "mc_version": "1.26.50.25"}
+        )
         self.assertEqual(edition["id"], "preview")
         self.assertEqual(version, "1.26.50.25")
 
@@ -338,7 +407,8 @@ class ManifestVersionTests(unittest.TestCase):
             root = Path(tmp)
             (root / "AppxManifest.xml").write_text(
                 '<Package><Identity Version="1.26.2004.0" /></Package>',
-                encoding="utf-8")
+                encoding="utf-8",
+            )
             self.assertEqual(games.mc_version_str(root), "1.26.20.4")
 
 
@@ -362,26 +432,32 @@ class InstalledBuildTests(unittest.TestCase):
             games_dir = base / "games"
             games_dir.mkdir(parents=True)
             store = dict(settings or {})
-            with mock.patch.object(games, "GAMES", games_dir), \
-                    mock.patch.object(games, "CONTENT", base / "content"), \
-                    mock.patch.object(games, "load_settings",
-                                      side_effect=lambda: dict(store)), \
-                    mock.patch.object(games, "save_settings",
-                                      side_effect=lambda new: (store.clear(),
-                                                               store.update(new))):
+            with (
+                mock.patch.object(games, "GAMES", games_dir),
+                mock.patch.object(games, "CONTENT", base / "content"),
+                mock.patch.object(
+                    games, "load_settings", side_effect=lambda: dict(store)
+                ),
+                mock.patch.object(
+                    games,
+                    "save_settings",
+                    side_effect=lambda new: (store.clear(), store.update(new)),
+                ),
+            ):
                 yield base, games_dir, store
 
     def test_every_downloaded_build_is_listed_newest_first(self):
         with self._tree() as (_base, games_dir, _settings):
-            _write_store_game(games_dir / "release" / "1.26.42.1")
-            _write_store_game(games_dir / "release" / "1.26.44.3")
-            _write_game(games_dir / "preview" / "1.26.50.25")
+            _write_store_game(games_dir / "minecraft-bedrock" / "release" / "1.26.42.1")
+            _write_store_game(games_dir / "minecraft-bedrock" / "release" / "1.26.44.3")
+            _write_game(games_dir / "minecraft-bedrock" / "preview" / "1.26.50.25")
 
             builds = games.installed_builds()
 
-        self.assertEqual([b["version"] for b in builds],
-                         ["1.26.50.25", "1.26.44.3", "1.26.42.1"])
-        self.assertEqual({b["edition"] for b in builds}, {"release", "preview"})
+        self.assertEqual(
+            [b["version"] for b in builds], ["1.26.50.25", "1.26.44.3", "1.26.42.1"]
+        )
+        self.assertEqual({b["id"] for b in builds}, {"release", "preview"})
         self.assertTrue(all(b["managed"] and b["playable"] for b in builds))
 
     def test_a_build_from_before_the_store_switch_is_listed_too(self):
@@ -397,12 +473,13 @@ class InstalledBuildTests(unittest.TestCase):
         self.assertEqual(len(builds), 1)
         self.assertTrue(builds[0]["legacy"])
         self.assertTrue(builds[0]["managed"])
-        self.assertIsNone(builds[0]["edition"])
+        self.assertIsNone(builds[0]["id"])
 
     def test_a_build_that_lost_its_package_is_listed_as_incomplete(self):
         with self._tree() as (_base, games_dir, _settings):
-            _write_store_game(games_dir / "release" / "1.26.44.3",
-                              package=False)
+            _write_store_game(
+                games_dir / "minecraft-bedrock" / "release" / "1.26.44.3", package=False
+            )
 
             builds = games.installed_builds()
 
@@ -414,13 +491,16 @@ class InstalledBuildTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
             games_dir = base / "games"
-            root = _write_store_game(games_dir / "release" / "1.26.44.3")
-            _write_store_game(games_dir / "release" / "1.26.42.1")
+            root = _write_store_game(
+                games_dir / "minecraft-bedrock" / "release" / "1.26.44.3"
+            )
+            _write_store_game(games_dir / "minecraft-bedrock" / "release" / "1.26.42.1")
             settings = {"game_dir": str(root)}
-            with mock.patch.object(games, "GAMES", games_dir), \
-                    mock.patch.object(games, "CONTENT", base / "content"), \
-                    mock.patch.object(games, "load_settings",
-                                      return_value=settings):
+            with (
+                mock.patch.object(games, "GAMES", games_dir),
+                mock.patch.object(games, "CONTENT", base / "content"),
+                mock.patch.object(games, "load_settings", return_value=settings),
+            ):
                 builds = games.installed_builds()
 
         in_use = [b["version"] for b in builds if b["in_use"]]
@@ -433,10 +513,11 @@ class InstalledBuildTests(unittest.TestCase):
             games_dir.mkdir(parents=True)
             elsewhere = _write_game(base / "somewhere" / "Minecraft")
             settings = {"game_dir": str(elsewhere)}
-            with mock.patch.object(games, "GAMES", games_dir), \
-                    mock.patch.object(games, "CONTENT", base / "content"), \
-                    mock.patch.object(games, "load_settings",
-                                      return_value=settings):
+            with (
+                mock.patch.object(games, "GAMES", games_dir),
+                mock.patch.object(games, "CONTENT", base / "content"),
+                mock.patch.object(games, "load_settings", return_value=settings),
+            ):
                 builds = games.installed_builds()
 
         self.assertEqual(len(builds), 1)
@@ -445,8 +526,12 @@ class InstalledBuildTests(unittest.TestCase):
 
     def test_removing_a_build_frees_its_folder_and_nothing_else(self):
         with self._tree() as (base, games_dir, _settings):
-            keep = _write_store_game(games_dir / "release" / "1.26.44.3")
-            drop = _write_store_game(games_dir / "release" / "1.26.42.1")
+            keep = _write_store_game(
+                games_dir / "minecraft-bedrock" / "release" / "1.26.44.3"
+            )
+            drop = _write_store_game(
+                games_dir / "minecraft-bedrock" / "release" / "1.26.42.1"
+            )
             # Worlds and settings live in the prefix, beside the account that
             # made them -- never in a build folder. This is the promise every
             # "Remove" button in the launcher makes.
@@ -463,12 +548,16 @@ class InstalledBuildTests(unittest.TestCase):
 
     def test_removing_the_build_in_use_takes_the_selection_with_it(self):
         with self._tree() as (base, games_dir, settings):
-            root = _write_store_game(games_dir / "release" / "1.26.44.3")
+            root = _write_store_game(
+                games_dir / "minecraft-bedrock" / "release" / "1.26.44.3"
+            )
             settings["game_dir"] = str(root)
             content = base / "content"
             content.symlink_to(root)
-            with mock.patch.object(games, "CONTENT", content), \
-                    mock.patch("bol.prefix._mc_running", return_value=False):
+            with (
+                mock.patch.object(games, "CONTENT", content),
+                mock.patch("bol.prefix._mc_running", return_value=False),
+            ):
                 games.remove_build(root)
 
             # A setting left pointing at a folder that is gone turns the next
@@ -480,28 +569,36 @@ class InstalledBuildTests(unittest.TestCase):
         with self._tree() as (base, _games_dir, _settings):
             elsewhere = _write_game(base / "somewhere" / "Minecraft")
 
-            with mock.patch("bol.prefix._mc_running", return_value=False), \
-                    self.assertRaises(BolError):
+            with (
+                mock.patch("bol.prefix._mc_running", return_value=False),
+                self.assertRaises(BolError),
+            ):
                 games.remove_build(elsewhere)
 
             self.assertTrue(elsewhere.exists())
 
     def test_the_games_folder_itself_is_never_removed(self):
         with self._tree() as (_base, games_dir, _settings):
-            _write_store_game(games_dir / "release" / "1.26.44.3")
+            _write_store_game(games_dir / "minecraft-bedrock" / "release" / "1.26.44.3")
 
-            with mock.patch("bol.prefix._mc_running", return_value=False), \
-                    self.assertRaises(BolError):
+            with (
+                mock.patch("bol.prefix._mc_running", return_value=False),
+                self.assertRaises(BolError),
+            ):
                 games.remove_build(games_dir)
 
             self.assertTrue(games_dir.exists())
 
     def test_nothing_is_removed_while_minecraft_is_running(self):
         with self._tree() as (_base, games_dir, _settings):
-            root = _write_store_game(games_dir / "release" / "1.26.44.3")
+            root = _write_store_game(
+                games_dir / "minecraft-bedrock" / "release" / "1.26.44.3"
+            )
 
-            with mock.patch("bol.prefix._mc_running", return_value=True), \
-                    self.assertRaises(BolError):
+            with (
+                mock.patch("bol.prefix._mc_running", return_value=True),
+                self.assertRaises(BolError),
+            ):
                 games.remove_build(root)
 
             self.assertTrue(root.exists())
@@ -511,22 +608,28 @@ class InstalledBuildTests(unittest.TestCase):
         # the depth of the pre-Store layout, so it is the one path a check on
         # depth alone would wave through.
         with self._tree() as (_base, games_dir, _settings):
-            _write_store_game(games_dir / "release" / "1.26.44.3")
+            _write_store_game(games_dir / "minecraft-bedrock" / "release" / "1.26.44.3")
 
-            with mock.patch("bol.prefix._mc_running", return_value=False), \
-                    self.assertRaises(BolError):
-                games.remove_build(games_dir / "release")
+            with (
+                mock.patch("bol.prefix._mc_running", return_value=False),
+                self.assertRaises(BolError),
+            ):
+                games.remove_build(games_dir / "minecraft-bedrock" / "release")
 
-            self.assertTrue((games_dir / "release" / "1.26.44.3").exists())
+            self.assertTrue(
+                (games_dir / "minecraft-bedrock" / "release" / "1.26.44.3").exists()
+            )
 
     def test_a_folder_that_holds_no_build_is_left_alone(self):
         with self._tree() as (_base, games_dir, _settings):
-            stray = games_dir / "release" / "notes"
+            stray = games_dir / "minecraft-bedrock" / "release" / "notes"
             stray.mkdir(parents=True)
             (stray / "readme.txt").write_text("mine", encoding="utf-8")
 
-            with mock.patch("bol.prefix._mc_running", return_value=False), \
-                    self.assertRaises(BolError):
+            with (
+                mock.patch("bol.prefix._mc_running", return_value=False),
+                self.assertRaises(BolError),
+            ):
                 games.remove_build(stray)
 
             self.assertTrue(stray.exists())
@@ -542,33 +645,41 @@ class BuildsPilingUpAreMentionedTests(unittest.TestCase):
     """
 
     def setUp(self):
-        patcher = mock.patch.object(games.xodus, "version_catalogue",
-                                    side_effect=lambda _e, **k: list(_CATALOGUE))
+        patcher = mock.patch.object(
+            games.xodus,
+            "version_catalogue",
+            side_effect=lambda _e, **k: list(_CATALOGUE),
+        )
         patcher.start()
         self.addCleanup(patcher.stop)
 
     @staticmethod
     def _edition():
-        return {"id": "release", "product": "9NBLGGH2JHXJ",
-                "name": "Minecraft for Windows", "beta": False}
+        return {
+            "id": "release",
+            "product": "9NBLGGH2JHXJ",
+            "name": "Minecraft for Windows",
+            "beta": False,
+        }
 
     def _install(self, base, version):
         def fake_install(_url, dest, progress=None):
             _write_game(Path(dest))
 
         said = []
-        with mock.patch.object(games, "GAMES", base), \
-                mock.patch.object(games, "info", side_effect=said.append), \
-                mock.patch.object(games, "load_settings", return_value={}), \
-                mock.patch.object(games.xodus, "install",
-                                  side_effect=fake_install):
+        with (
+            mock.patch.object(games, "GAMES", base),
+            mock.patch.object(games, "info", side_effect=said.append),
+            mock.patch.object(games, "load_settings", return_value={}),
+            mock.patch.object(games.xodus, "install", side_effect=fake_install),
+        ):
             games.install_game(self._edition(), version)
         return said
 
     def test_the_builds_left_behind_are_named_after_a_download(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
-            _write_game(base / "release" / "1.26.42.1")
+            _write_game(base / "minecraft-bedrock" / "release" / "1.26.42.1")
 
             said = self._install(base, "1.26.44.3")
 
@@ -581,3 +692,192 @@ class BuildsPilingUpAreMentionedTests(unittest.TestCase):
             said = self._install(Path(tmp), "1.26.44.3")
 
         self.assertFalse([line for line in said if "still installed" in line])
+
+
+class LegacyMigrationTests(unittest.TestCase):
+    """Pre-E3 Bedrock installs land at games/<edition>/<version>/; E3 lifts
+    them into games/minecraft-bedrock/<edition>/<version>/ so the family
+    key is the same as for every future game.
+
+    The migration runs once on first launch after E3 and is idempotent so
+    later launches are a no-op.
+    """
+
+    @staticmethod
+    def _make_legacy_build(games_dir, edition, version):
+        root = games_dir / edition / version
+        root.mkdir(parents=True)
+        (root / "Minecraft.Windows.exe").write_bytes(b"MZ")
+        (root / "AppxManifest.xml").write_text(
+            '<Package><Identity Version="1.26.3301.0" /></Package>', encoding="utf-8"
+        )
+        return root
+
+    def test_legacy_bedrock_editions_are_moved_under_the_family_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            games_dir = Path(tmp)
+            self._make_legacy_build(games_dir, "release", "1.26.44.3")
+            self._make_legacy_build(games_dir, "preview", "1.26.50.25")
+
+            with (
+                mock.patch.object(games, "GAMES", games_dir),
+                mock.patch.object(games, "LIBRARY", games_dir.parent / "library"),
+                mock.patch.object(
+                    games,
+                    "LIBRARY_POINTER",
+                    games_dir.parent / "library" / "current.json",
+                ),
+            ):
+                moved = games.migrate_legacy_layout()
+
+            self.assertEqual(set(moved), {"release", "preview"})
+            self.assertTrue(
+                (games_dir / "minecraft-bedrock" / "release" / "1.26.44.3").is_dir()
+            )
+            self.assertTrue(
+                (games_dir / "minecraft-bedrock" / "preview" / "1.26.50.25").is_dir()
+            )
+            self.assertFalse((games_dir / "release").exists())
+            self.assertFalse((games_dir / "preview").exists())
+
+    def test_migration_seeds_the_pointer_from_the_legacy_settings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            games_dir = base / "games"
+            library_dir = base / "library"
+            self._make_legacy_build(games_dir, "release", "1.26.44.3")
+            settings = {"mc_edition": "release", "mc_version": "1.26.44.3"}
+
+            with (
+                mock.patch.object(games, "GAMES", games_dir),
+                mock.patch.object(games, "LIBRARY", library_dir),
+                mock.patch.object(
+                    games, "LIBRARY_POINTER", library_dir / "current.json"
+                ),
+                mock.patch.object(
+                    games, "load_settings", side_effect=lambda: dict(settings)
+                ),
+            ):
+                games.migrate_legacy_layout()
+                pointer = games._read_pointer()
+            self.assertEqual(
+                pointer,
+                {
+                    "family": "minecraft-bedrock",
+                    "id": "release",
+                    "version": "1.26.44.3",
+                },
+            )
+
+    def test_migration_is_idempotent_on_a_clean_tree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            games_dir = Path(tmp)
+            with mock.patch.object(games, "GAMES", games_dir):
+                first = games.migrate_legacy_layout()
+                second = games.migrate_legacy_layout()
+
+            self.assertEqual(first, [])
+            self.assertEqual(second, [])
+
+    def test_a_non_bedrock_folder_at_the_top_level_is_left_alone(self):
+        # A stray folder named like a future family would be a false
+        # positive for the migration if the test relied on the legacy
+        # editions list. Document the intent.
+        with tempfile.TemporaryDirectory() as tmp:
+            games_dir = Path(tmp)
+            stray = games_dir / "downloads"
+            stray.mkdir()
+            (stray / "stuff.txt").write_text("x")
+
+            with mock.patch.object(games, "GAMES", games_dir):
+                moved = games.migrate_legacy_layout()
+
+            self.assertEqual(moved, [])
+            self.assertTrue(stray.exists())
+
+
+class LibraryPointerTests(unittest.TestCase):
+    """The active selection lives at DATA/library/current.json.
+
+    It is read by the GUI and the launch path, written by use_game_dir and
+    migrate_legacy_layout, and survives the CONTENT symlink going missing.
+    """
+
+    def test_use_game_dir_writes_the_pointer_for_a_managed_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            games_dir = base / "games"
+            library_dir = base / "library"
+            root = _write_game(
+                games_dir / "minecraft-bedrock" / "release" / "1.26.44.3"
+            )
+            settings = {}
+
+            with (
+                mock.patch.object(games, "GAMES", games_dir),
+                mock.patch.object(games, "LIBRARY", library_dir),
+                mock.patch.object(
+                    games, "LIBRARY_POINTER", library_dir / "current.json"
+                ),
+                mock.patch.object(games, "CONTENT", base / "content"),
+                mock.patch.object(
+                    games, "load_settings", side_effect=lambda: dict(settings)
+                ),
+                mock.patch.object(games, "save_settings", side_effect=settings.update),
+            ):
+                games.use_game_dir(root)
+                pointer = games._read_pointer()
+
+            self.assertEqual(
+                pointer,
+                {
+                    "family": "minecraft-bedrock",
+                    "id": "release",
+                    "version": "1.26.44.3",
+                },
+            )
+
+    def test_active_selection_falls_back_to_legacy_settings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            library_dir = base / "library"
+            settings = {"mc_edition": "preview", "mc_version": "1.26.50.25"}
+
+            with (
+                mock.patch.object(games, "LIBRARY", library_dir),
+                mock.patch.object(
+                    games, "LIBRARY_POINTER", library_dir / "current.json"
+                ),
+                mock.patch.object(
+                    games, "load_settings", side_effect=lambda: dict(settings)
+                ),
+            ):
+                selection = games.active_selection()
+
+        self.assertEqual(
+            selection,
+            {"family": "minecraft-bedrock", "id": "preview", "version": "1.26.50.25"},
+        )
+
+    def test_active_selection_prefers_the_pointer_over_legacy_settings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            library_dir = base / "library"
+            library_dir.mkdir()
+            pointer_path = library_dir / "current.json"
+            # Write a pointer that disagrees with the legacy settings, then
+            # read active_selection() and confirm the pointer wins.
+            with (
+                mock.patch.object(games, "LIBRARY", library_dir),
+                mock.patch.object(games, "LIBRARY_POINTER", pointer_path),
+                mock.patch.object(
+                    games,
+                    "load_settings",
+                    return_value={"mc_edition": "preview", "mc_version": "1.26.50.25"},
+                ),
+            ):
+                games._write_pointer("minecraft-bedrock", "release", "1.26.44.3")
+                selection = games.active_selection()
+
+        self.assertEqual(selection["id"], "release")
+        self.assertEqual(selection["version"], "1.26.44.3")
