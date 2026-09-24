@@ -1313,11 +1313,11 @@ def seed_default_servers(prefix=None, prefix_idle=None,
 
 
 def _mc_running():
-    for pid in prefix_processes(active_prefix()):
-        try:
-            cmdline = Path(f"/proc/{pid}/cmdline").read_bytes()
-            if b"Minecraft.Windows.exe" in cmdline:
-                return True
-        except OSError:
-            continue
-    return False
+    """Whether a Bedrock process is alive in the active Wine prefix.
+
+    Thin shim around :func:`bol.launchers.bedrock.bedrock_is_running` --
+    kept as ``_mc_running`` because every Bedrock-specific caller
+    (content, games, gui, inject) imports it by name.
+    """
+    from .launchers.bedrock import bedrock_is_running
+    return bedrock_is_running()

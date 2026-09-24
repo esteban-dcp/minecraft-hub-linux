@@ -73,23 +73,23 @@ class BedrockLauncherDelegationTests(unittest.TestCase):
         install.assert_called_once_with(product, "1.2.3", progress=None, force=False)
         self.assertEqual(root, Path("/tmp/build"))
 
-    def test_version_str_delegates_to_games_mc_version_str(self):
-        from bol import games
+    def test_version_str_uses_bedrock_version_parser(self):
+        from bol.launchers import bedrock as _bedrock_mod
         from bol.launchers.bedrock import BedrockLauncher
 
         launcher = BedrockLauncher()
         with mock.patch.object(
-            games, "mc_version_str", return_value="1.26.20.4"
+            _bedrock_mod, "bedrock_version_str", return_value="1.26.20.4"
         ) as parser:
             self.assertEqual(launcher.version_str(Path("/tmp/build")), "1.26.20.4")
         parser.assert_called_once_with(Path("/tmp/build"))
 
-    def test_is_running_delegates_to_prefix_running_check(self):
-        from bol import prefix
+    def test_is_running_delegates_to_bedrock_is_running(self):
+        from bol.launchers import bedrock as _bedrock_mod
         from bol.launchers.bedrock import BedrockLauncher
 
         launcher = BedrockLauncher()
-        with mock.patch.object(prefix, "_mc_running", return_value=True):
+        with mock.patch.object(_bedrock_mod, "bedrock_is_running", return_value=True):
             self.assertTrue(launcher.is_running())
 
     def test_install_record_path_matches_games_convention(self):
@@ -143,3 +143,34 @@ class GamesDispatchTests(unittest.TestCase):
             self.assertEqual(
                 games.version_key_for("minecraft-unknown", "1.2.3"), ("1.2.3",)
             )
+
+
+class ShimsStayCallableTests(unittest.TestCase):
+    """The thin shims in bol.games / bol.prefix keep existing imports
+    working until callers can be moved to the launcher."""
+
+    def test_mc_version_str_shim_uses_bedrock_parser(self):
+        from bol import games
+        from bol.launchers import bedrock as _bedrock_mod
+
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / "AppxManifest.xml").write_text(
+                '<Package><Identity Version="1.26.2004.0" /></Package>',
+                encoding="utf-8")
+            with mock.patch.object(_bedrock_mod, "bedrock_version_str",
+                                  wraps=_bedrock_mod.bedrock_version_str) as spy:
+                self.assertEqual(games.mc_version_str(folder), "1.26.20.4")
+                spy.assert_called_once_with(folder)
+
+    def test_prefix_mc_running_shim_uses_bedrock_running_check(self):
+        from bol import prefix
+        from bol.launchers import bedrock as _bedrock_mod
+
+        with mock.patch.object(_bedrock_mod, "bedrock_is_running",
+                               return_value=True) as spy:
+            self.assertTrue(prefix._mc_running())
+            spy.assert_called_once_with()
+
+
+import tempfile  # used by the shim tests above

@@ -35,13 +35,13 @@ class BedrockLauncher:
         return games.install_game(product, version, progress=progress, force=force)
 
     def version_str(self, folder: Path) -> Optional[str]:
-        return games.mc_version_str(folder)
+        return bedrock_version_str(folder)
 
     def version_key(self, version: str) -> tuple:
         return games.xodus.version_key(version)
 
     def is_running(self) -> bool:
-        return prefix._mc_running()
+        return bedrock_is_running()
 
     def prefix_dir(self) -> Optional[Path]:
         return PFX
@@ -94,6 +94,54 @@ class BedrockLauncher:
 
     def product_label(self, product) -> str:
         return product.get("name", "Minecraft")
+
+
+
+
+def bedrock_version_str(folder):
+    """The Bedrock AppxManifest version parser.
+
+    Bedrock-specific because the manifest format is Bedrock's: the third
+    ``Identity/@Version`` field packs ``<minor><patch>`` (e.g. ``2004``
+    -> ``20.4``). Other GDK titles read the manifest the same way, so
+    Dungeons and Legends can re-use this if their store packages use the
+    same XML; if not, the launcher for that family overrides
+    :meth:`BedrockLauncher.version_str` with its own parser.
+    """
+    import re
+    for nm in ("appxmanifest.xml", "AppxManifest.xml"):
+        man = folder / nm
+        if man.exists():
+            m = re.search(r'Identity[^>]*Version="(\d+)\.(\d+)\.(\d+)\.\d+"',
+                          man.read_text(errors="ignore"))
+            if m:
+                p = m.group(3)
+                if len(p) >= 3:
+                    return f"{m.group(1)}.{m.group(2)}.{int(p[:2])}.{int(p[2:])}"
+                return f"{m.group(1)}.{m.group(2)}.{int(p)}"
+    return None
+
+
+def bedrock_is_running():
+    """True while a Bedrock process is alive in the Wine prefix.
+
+    The check is process-name based: ``prefix_processes`` lists every
+    PID sharing the prefix's ``drive_c/users/steamuser``, and any of
+    them whose ``/proc/<pid>/cmdline`` mentions
+    ``Minecraft.Windows.exe`` counts as the game. Other GDK titles look
+    different here -- Dungeons ships ``Dungeons.exe``, Legends ships
+    ``MinecraftLegends.exe`` -- so the launcher for those families
+    overrides :meth:`BedrockLauncher.is_running` with its own scan.
+    """
+    from .. import prefix
+    for pid in prefix.prefix_processes(prefix.active_prefix()):
+        try:
+            cmdline = Path(f"/proc/{pid}/cmdline").read_bytes()
+            if b"Minecraft.Windows.exe" in cmdline:
+                return True
+        except OSError:
+            continue
+    return False
 
 
 def _build_registry() -> dict:

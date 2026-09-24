@@ -832,27 +832,15 @@ def remove_build(path):
 
 
 def mc_version_str(game_dir: Path):
-    """The Bedrock-specific version parser.
+    """The Bedrock AppxManifest version parser.
 
-    Bedrock-only because the manifest format is Bedrock's. The launcher
-    is the right entry point for multi-family callers -- this shim stays
-    so the Bedrock-specific surface area (fixups, content, doctor) does
-    not change.
+    Thin shim around :func:`bol.launchers.bedrock.bedrock_version_str` --
+    kept as ``mc_version_str`` because every Bedrock-specific caller
+    (``fixups``, ``content``, ``doctor``, ``launch``, ``gui``) imports
+    it by name and the rename is a separate piece of work.
     """
-    for nm in ("appxmanifest.xml", "AppxManifest.xml"):
-        man = game_dir / nm
-        if man.exists():
-            m = re.search(r'Identity[^>]*Version="(\d+)\.(\d+)\.(\d+)\.\d+"',
-                          man.read_text(errors="ignore"))
-            if m:
-                p = m.group(3)
-                # Bedrock packs "<minor><patch>" into the Appx 3rd field, e.g.
-                # 2004 -> "20.4", 3005 -> "30.5", 0301 -> "3.1" — split it back
-                # so the result matches Mojang's version numbers (e.g. 1.26.20.4).
-                if len(p) >= 3:
-                    return f"{m.group(1)}.{m.group(2)}.{int(p[:2])}.{int(p[2:])}"
-                return f"{m.group(1)}.{m.group(2)}.{int(p)}"
-    return None
+    from .launchers.bedrock import bedrock_version_str
+    return bedrock_version_str(Path(game_dir))
 
 
 def _vt(v):
